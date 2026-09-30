@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '11'
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -34,10 +34,21 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          # Converter JKS para PKCS12 (compatível com Java 17)
+          keytool -importkeystore \
+            -srckeystore android/app/upload-keystore.jks \
+            -destkeystore android/app/upload-keystore.p12 \
+            -deststoretype PKCS12 \
+            -storepass minhaloja123 \
+            -keypass minhaloja123 \
+            -srcstorepass minhaloja123 \
+            -srcalias minhaloja \
+            -destalias minhaloja \
+            -noprompt
           echo "storePassword=minhaloja123" > android/key.properties
           echo "keyPassword=minhaloja123" >> android/key.properties
           echo "keyAlias=minhaloja" >> android/key.properties
-          echo "storeFile=upload-keystore.jks" >> android/key.properties
+          echo "storeFile=upload-keystore.p12" >> android/key.properties
 
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
