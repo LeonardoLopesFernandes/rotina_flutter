@@ -104,6 +104,21 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
       } else {
         await saveNoSalesHistoryItemAnswer(request);
       }
+      // Atualiza o item local com quem tratou e quando, pois a API não retorna
+      // o treatedBy/treatedDate na lista. O badge "Tratado por" precisa disso.
+      final now = DateTime.now();
+      final treatedBy = await Session.getUserName() ?? _badgeUserName;
+      setState(() {
+        for (final group in _groups) {
+          final idx = group.items.indexWhere((i) => i.id == item.id);
+          if (idx >= 0) {
+            group.items[idx] = item.copyWith(
+              treatedBy: treatedBy,
+              treatedDate: now.toIso8601String(),
+            );
+          }
+        }
+      });
       showToast('Resposta registrada!');
       await _loadItems();
     } catch (e) {

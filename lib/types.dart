@@ -219,6 +219,36 @@ class SpecialItem {
       );
 
   bool get isTreated => treatedBy != null && treatedBy!.isNotEmpty;
+
+  SpecialItem copyWith({
+    String? id,
+    String? store,
+    DepartmentInfo? department,
+    String? ean,
+    String? sap,
+    String? description,
+    int? stockQuantity,
+    double? stockValue,
+    String? grade,
+    String? daysWithoutSelling,
+    String? treatedBy,
+    String? treatedDate,
+    String? question,
+  }) => SpecialItem(
+    id: id ?? this.id,
+    store: store ?? this.store,
+    department: department ?? this.department,
+    ean: ean ?? this.ean,
+    sap: sap ?? this.sap,
+    description: description ?? this.description,
+    stockQuantity: stockQuantity ?? this.stockQuantity,
+    stockValue: stockValue ?? this.stockValue,
+    grade: grade ?? this.grade,
+    daysWithoutSelling: daysWithoutSelling ?? this.daysWithoutSelling,
+    treatedBy: treatedBy ?? this.treatedBy,
+    treatedDate: treatedDate ?? this.treatedDate,
+    question: question ?? this.question,
+  );
 }
 
 class ByAnswerItem {
