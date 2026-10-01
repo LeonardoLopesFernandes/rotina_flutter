@@ -66,6 +66,7 @@ class Item {
   final String? treatedAt;
   final String? treatedBy;
   final String? departmentCode;
+  final String? createdBy;
 
   Item({
     required this.id,
@@ -81,6 +82,7 @@ class Item {
     this.treatedAt,
     this.treatedBy,
     this.departmentCode,
+    this.createdBy,
   });
 
 factory Item.fromJson(Map<String, dynamic> json) => Item(
@@ -97,8 +99,9 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
             ?.map((e) => TreatedAnswer.fromJson(e as Map<String, dynamic>))
             .toList(),
         treatedAt: (json['treatedAt'] ?? json['treated_at']) as String?,
-        treatedBy: (json['treatedBy'] ?? json['treated_by']) as String?,
+        treatedBy: (json['treatedBy'] ?? json['treated_by'] ?? json['createdBy'] ?? json['created_by']) as String?,
         departmentCode: json['departmentCode'] as String?,
+        createdBy: (json['createdBy'] ?? json['created_by']) as String?,
       );
 
   Item copyWith({
@@ -115,6 +118,7 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
     String? treatedAt,
     String? treatedBy,
     String? departmentCode,
+    String? createdBy,
   }) =>
       Item(
         id: id ?? this.id,
@@ -130,6 +134,7 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
         treatedAt: treatedAt ?? this.treatedAt,
         treatedBy: treatedBy ?? this.treatedBy,
         departmentCode: departmentCode ?? this.departmentCode,
+        createdBy: createdBy ?? this.createdBy,
       );
 }
 
@@ -185,6 +190,7 @@ class SpecialItem {
   final String? treatedBy;
   final String? treatedDate;
   final String? question;
+  final String? createdBy;
 
   SpecialItem({
     required this.id,
@@ -200,6 +206,7 @@ class SpecialItem {
     this.treatedBy,
     this.treatedDate,
     this.question,
+    this.createdBy,
   });
 
   factory SpecialItem.fromJson(Map<String, dynamic> json) => SpecialItem(
@@ -213,9 +220,10 @@ class SpecialItem {
         stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
         grade: json['grade'] as String? ?? '',
         daysWithoutSelling: json['daysWithoutSelling'] as String?,
-        treatedBy: (json['treatedBy'] ?? json['treated_by']) as String?,
+        treatedBy: (json['treatedBy'] ?? json['treated_by'] ?? json['createdBy'] ?? json['created_by']) as String?,
         treatedDate: (json['treatedDate'] ?? json['treated_date']) as String?,
         question: json['question'] as String?,
+        createdBy: (json['createdBy'] ?? json['created_by']) as String?,
       );
 
   bool get isTreated => treatedBy != null && treatedBy!.isNotEmpty;
@@ -234,6 +242,7 @@ class SpecialItem {
     String? treatedBy,
     String? treatedDate,
     String? question,
+    String? createdBy,
   }) => SpecialItem(
     id: id ?? this.id,
     store: store ?? this.store,
@@ -248,6 +257,7 @@ class SpecialItem {
     treatedBy: treatedBy ?? this.treatedBy,
     treatedDate: treatedDate ?? this.treatedDate,
     question: question ?? this.question,
+    createdBy: createdBy ?? this.createdBy,
   );
 }
 

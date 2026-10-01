@@ -288,7 +288,7 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                                   fontFamily: 'Open Sans')),
                           const SizedBox(height: 12),
                           _badgeRow('Tratado por:',
-                              _badgeItem!.treatedBy ?? _badgeUserName),
+                              _badgeItem!.treatedBy ?? _badgeItem!.createdBy ?? _badgeUserName),
                           _badgeRow('Data/hora:',
                               formatBadgeDate(_badgeItem!.treatedDate)),
                           const Text('Respostas:',

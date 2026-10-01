@@ -22,7 +22,7 @@ class TreatmentBadgeModal extends StatelessWidget {
     if (!visible || item == null) return const SizedBox.shrink();
     final it = item!;
     final treatedAt = formatBadgeDate(it.treatedAt);
-    final treatedBy = it.treatedBy ?? userName;
+    final treatedBy = it.treatedBy ?? it.createdBy ?? userName;
     final answers = it.answers;
 
     return Stack(
