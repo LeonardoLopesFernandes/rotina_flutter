@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen>
     _autoLoginDisparado = true;
     _saveCredentials();
     Navigator.of(context)
-        .pushNamed('LoginWebView', arguments: {'autoLogin': false});
+        .pushNamed('LoginWebView', arguments: {'autoLogin': true});
   }
 
   Future<void> _handleOpenBrowser() async {
@@ -303,13 +303,35 @@ class _LoginScreenState extends State<LoginScreen>
                       ],
                     ),
                   ),
-                _primaryButton('ENTRAR', _handleLogin),
-                const SizedBox(height: 12),
-                _secondaryButton('ENTRAR COM TOKEN', () {
-                  Navigator.of(context).pushNamed('LoginToken');
-                }),
-                const SizedBox(height: 12),
-                _browserButton(),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: _handleLogin,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _MicrosoftLogo(size: 20),
+                        SizedBox(width: 10),
+                        Text('Login Microsoft',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                fontFamily: 'Open Sans')),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -415,6 +437,42 @@ class _LoginScreenState extends State<LoginScreen>
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
                 fontFamily: 'Open Sans')),
+      ),
+    );
+  }
+}
+
+/// Logo 2x2 da Microsoft (4 quadrados coloridos).
+class _MicrosoftLogo extends StatelessWidget {
+  final double size;
+  const _MicrosoftLogo({this.size = 20});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = size / 2 - 1;
+    final tiles = [
+      Container(color: const Color(0xFFF25022)),
+      Container(color: const Color(0xFF7FBA00)),
+      Container(color: const Color(0xFF00A4EF)),
+      Container(color: const Color(0xFFFFBA08)),
+    ];
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Column(
+        children: [
+          Row(children: [
+            SizedBox(width: c, height: c, child: tiles[0]),
+            const SizedBox(width: 2),
+            SizedBox(width: c, height: c, child: tiles[1]),
+          ]),
+          const SizedBox(height: 2),
+          Row(children: [
+            SizedBox(width: c, height: c, child: tiles[2]),
+            const SizedBox(width: 2),
+            SizedBox(width: c, height: c, child: tiles[3]),
+          ]),
+        ],
       ),
     );
   }
