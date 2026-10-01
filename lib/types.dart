@@ -67,6 +67,7 @@ class Item {
   final String? treatedBy;
   final String? departmentCode;
   final String? createdBy;
+  final String? createdAt;
 
   Item({
     required this.id,
@@ -83,6 +84,7 @@ class Item {
     this.treatedBy,
     this.departmentCode,
     this.createdBy,
+    this.createdAt,
   });
 
 factory Item.fromJson(Map<String, dynamic> json) => Item(
@@ -102,7 +104,41 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
         treatedBy: (json['treatedBy'] ?? json['treated_by'] ?? json['createdBy'] ?? json['created_by']) as String?,
         departmentCode: json['departmentCode'] as String?,
         createdBy: (json['createdBy'] ?? json['created_by']) as String?,
+        createdAt: (json['createdAt'] ?? json['created_at']) as String?,
       );
+
+  /// Retorna a data/hora válida do tratamento, caindo para createdAt se treatedAt for inválido
+  DateTime? get effectiveTreatedAt {
+    if (treatedAt != null) {
+      try {
+        final parsed = DateTime.parse(treatedAt!);
+        // Verifica se é uma data válida (não "schedule" ou similar)
+        if (parsed.year > 2000 && parsed.year < 2100) return parsed;
+      } catch (_) {}
+    }
+    // Fallback para createdAt
+    if (createdAt != null) {
+      try {
+        return DateTime.parse(createdAt!);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  /// Retorna o usuário que tratou, caindo para createdBy
+  String? get effectiveTreatedBy {
+    if (treatedBy != null && treatedBy!.isNotEmpty) return treatedBy;
+    return createdBy;
+  }
+
+  /// Retorna a data/hora formatada para exibição no badge (DD/MM/AAAA - HH:MM)
+  String? get formattedTreatedAt {
+    final dt = effectiveTreatedAt;
+    if (dt == null) return null;
+    return '${_twoDigits(dt.day)}/${_twoDigits(dt.month)}/${dt.year} - ${_twoDigits(dt.hour)}:${_twoDigits(dt.minute)}';
+  }
+
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   Item copyWith({
     String? id,
@@ -119,6 +155,7 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
     String? treatedBy,
     String? departmentCode,
     String? createdBy,
+    String? createdAt,
   }) =>
       Item(
         id: id ?? this.id,
@@ -135,6 +172,7 @@ factory Item.fromJson(Map<String, dynamic> json) => Item(
         treatedBy: treatedBy ?? this.treatedBy,
         departmentCode: departmentCode ?? this.departmentCode,
         createdBy: createdBy ?? this.createdBy,
+        createdAt: createdAt ?? this.createdAt,
       );
 }
 
@@ -191,6 +229,7 @@ class SpecialItem {
   final String? treatedDate;
   final String? question;
   final String? createdBy;
+  final String? createdAt;
 
   SpecialItem({
     required this.id,
@@ -207,6 +246,7 @@ class SpecialItem {
     this.treatedDate,
     this.question,
     this.createdBy,
+    this.createdAt,
   });
 
   factory SpecialItem.fromJson(Map<String, dynamic> json) => SpecialItem(
@@ -224,9 +264,41 @@ class SpecialItem {
         treatedDate: (json['treatedDate'] ?? json['treated_date']) as String?,
         question: json['question'] as String?,
         createdBy: (json['createdBy'] ?? json['created_by']) as String?,
+        createdAt: (json['createdAt'] ?? json['created_at']) as String?,
       );
 
   bool get isTreated => treatedBy != null && treatedBy!.isNotEmpty;
+
+  /// Retorna a data/hora válida do tratamento, caindo para createdAt se treatedDate for inválida
+  DateTime? get effectiveTreatedAt {
+    if (treatedDate != null) {
+      try {
+        final parsed = DateTime.parse(treatedDate!);
+        if (parsed.year > 2000 && parsed.year < 2100) return parsed;
+      } catch (_) {}
+    }
+    if (createdAt != null) {
+      try {
+        return DateTime.parse(createdAt!);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  /// Retorna o usuário que tratou, caindo para createdBy
+  String? get effectiveTreatedBy {
+    if (treatedBy != null && treatedBy!.isNotEmpty) return treatedBy;
+    return createdBy;
+  }
+
+  /// Retorna a data/hora formatada para exibição no badge (DD/MM/AAAA - HH:MM)
+  String? get formattedTreatedAt {
+    final dt = effectiveTreatedAt;
+    if (dt == null) return null;
+    return '${_twoDigits(dt.day)}/${_twoDigits(dt.month)}/${dt.year} - ${_twoDigits(dt.hour)}:${_twoDigits(dt.minute)}';
+  }
+
+  String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   SpecialItem copyWith({
     String? id,
@@ -243,6 +315,7 @@ class SpecialItem {
     String? treatedDate,
     String? question,
     String? createdBy,
+    String? createdAt,
   }) => SpecialItem(
     id: id ?? this.id,
     store: store ?? this.store,
@@ -258,6 +331,7 @@ class SpecialItem {
     treatedDate: treatedDate ?? this.treatedDate,
     question: question ?? this.question,
     createdBy: createdBy ?? this.createdBy,
+    createdAt: createdAt ?? this.createdAt,
   );
 }
 

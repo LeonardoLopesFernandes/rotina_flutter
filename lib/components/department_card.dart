@@ -55,18 +55,7 @@ class DepartmentCard extends StatelessWidget {
                 ),
                 if (allTreated) ...[
                   const SizedBox(width: 6),
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.check, color: Colors.white, size: 13),
-                    ),
-                  ),
+                  Icon(Icons.check, color: AppColors.success, size: 18),
                 ] else if (blocked) ...[
                   const SizedBox(width: 6),
                   Image.asset('assets/ic_block.png', width: 20, height: 20),

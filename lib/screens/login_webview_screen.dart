@@ -127,9 +127,9 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
                 showToast(
                     'Não foi possível abrir o login da Microsoft. Sua rede '
                     'pode estar bloqueando o acesso. Use "Entrar com token".',
-                    true);
+                    isError: true);
               } else {
-                showToast('Erro ao carregar: ${error.description}', true);
+                showToast('Erro ao carregar: ${error.description}', isError: true);
               }
             }
           },
@@ -225,7 +225,7 @@ class _LoginWebViewScreenState extends State<LoginWebViewScreen> {
     _tokenAttempts += 1;
     if (_tokenAttempts > 25) {
       setState(() => _loading = false);
-      showToast('Não foi possível obter o token. Use "Entrar com token".', true);
+      showToast('Não foi possível obter o token. Use "Entrar com token".', isError: true);
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }

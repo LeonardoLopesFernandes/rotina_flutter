@@ -1,12 +1,63 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rotina_comercial/auth/auth_provider.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/utils/toast.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _profileImage;
+  bool _isLoadingImage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final path = prefs.getString('profile_image_path');
+    if (path != null && File(path).existsSync()) {
+      if (mounted) setState(() => _profileImage = File(path));
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (picked != null) {
+        final file = File(picked.path);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('profile_image_path', file.path);
+        if (mounted) setState(() => _profileImage = file);
+      }
+    } catch (e) {
+      showToast('Erro ao selecionar imagem', isError: true);
+    }
+  }
+
+  Future<void> _removeImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('profile_image_path');
+    if (mounted) setState(() => _profileImage = null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,15 +92,54 @@ class ProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            Container(
-              width: 100,
-              height: 100,
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Image.asset('assets/ic_user.png', width: 60, height: 60),
+            GestureDetector(
+              onTap: _pickImage,
+              child: Stack(
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: _profileImage != null
+                          ? ClipOval(
+                              child: Image.file(
+                                _profileImage!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Image.asset('assets/ic_user.png', width: 60, height: 60),
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),

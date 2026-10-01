@@ -65,6 +65,18 @@ DateTime clampToWeekday(DateTime date) {
   return (monday: monday, friday: friday);
 }
 
+/// Retorna todas as datas habilitadas (segunda a sexta) da semana da data fornecida
+List<DateTime> getEnabledDaysInWeek(DateTime date) {
+  final range = getWeekRange(date);
+  final days = <DateTime>[];
+  var current = range.monday;
+  while (!current.isAfter(range.friday)) {
+    days.add(DateTime(current.year, current.month, current.day));
+    current = current.add(const Duration(days: 1));
+  }
+  return days;
+}
+
 final List<RegExp> _dateFormatsIn = [
   RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d+)$'),
   RegExp(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$'),
@@ -93,7 +105,7 @@ DateTime? parseTreatedDate(String? value) {
 String formatBadgeDate(String? value) {
   final d = parseTreatedDate(value);
   if (d == null) return '—';
-  return '${formatDisplayDate(d)} - ${_pad(d.hour)}:${_pad(d.minute)}:${_pad(d.second)}';
+  return '${formatDisplayDate(d)} - ${_pad(d.hour)}:${_pad(d.minute)}';
 }
 
 bool sameDay(DateTime a, DateTime b) {

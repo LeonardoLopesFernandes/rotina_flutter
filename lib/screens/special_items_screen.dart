@@ -67,7 +67,7 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
         _groups.sort((a, b) => a.department.code.compareTo(b.department.code));
       });
     } catch (e) {
-      showToast('Erro ao carregar itens: $e', true);
+      showToast('Erro ao carregar itens: $e', isError: true);
     } finally {
       setState(() => _refreshing = false);
     }
@@ -122,7 +122,7 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
       showToast('Resposta registrada!');
       await _loadItems();
     } catch (e) {
-      showToast('Erro ao salvar: $e', true);
+      showToast('Erro ao salvar: $e', isError: true);
     }
   }
 
@@ -288,9 +288,9 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                                   fontFamily: 'Open Sans')),
                           const SizedBox(height: 12),
                           _badgeRow('Tratado por:',
-                              _badgeItem!.treatedBy ?? _badgeItem!.createdBy ?? _badgeUserName),
+                              _badgeItem!.effectiveTreatedBy ?? _badgeUserName),
                           _badgeRow('Data/hora:',
-                              formatBadgeDate(_badgeItem!.treatedDate)),
+                              _badgeItem!.formattedTreatedAt ?? '—'),
                           const Text('Respostas:',
                               style: TextStyle(
                                   fontSize: 13, color: AppColors.textMuted, fontFamily: 'Open Sans')),
@@ -391,7 +391,7 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                 final result = _itemType == 'unsold'
                     ? await downloadUnsoldItemsPdf()
                     : await downloadNoSalesHistoryItemsPdf();
-                showToast(result.message, true);
+                showToast(result.message, isError: true);
               },
               child: const SizedBox(
                 width: 44,

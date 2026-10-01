@@ -21,8 +21,8 @@ class TreatmentBadgeModal extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!visible || item == null) return const SizedBox.shrink();
     final it = item!;
-    final treatedAt = formatBadgeDate(it.treatedAt);
-    final treatedBy = it.treatedBy ?? it.createdBy ?? userName;
+    final treatedAt = it.formattedTreatedAt;
+    final treatedBy = it.effectiveTreatedBy ?? userName;
     final answers = it.answers;
 
     return Stack(
@@ -58,7 +58,7 @@ class TreatmentBadgeModal extends StatelessWidget {
                           fontFamily: 'Open Sans')),
                   const SizedBox(height: 12),
                   _row('Tratado por:', treatedBy),
-                  _row('Data/hora:', treatedAt),
+                  _row('Data/hora:', treatedAt ?? '—'),
                   const Text('Respostas:',
                       style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontFamily: 'Open Sans')),
                   Flexible(

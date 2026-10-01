@@ -53,7 +53,7 @@ class _LoginTokenScreenState extends State<LoginTokenScreen> {
       return;
     }
     if (token.length <= 20) {
-      showToast('Token muito curto. Use o token rc-newToken completo.', true);
+      showToast('Token muito curto. Use o token rc-newToken completo.', isError: true);
       return;
     }
     setState(() => _saving = true);
@@ -82,16 +82,16 @@ class _LoginTokenScreenState extends State<LoginTokenScreen> {
             'Token rejeitado (HTTP $status). Se a rede usa proxy, ele pode '
             'estar bloqueando o app. Use o navegador (Kiwi) para pegar o '
             'token e cole aqui. Detalhe: ${body.length > 80 ? body.substring(0, 80) : body}',
-            true);
+            isError: true);
       } else if (status == 500) {
-        showToast('Erro no servidor (500). Tente novamente.', true);
+        showToast('Erro no servidor (500). Tente novamente.', isError: true);
       } else {
-        showToast(mapErrorMessage(e), true);
+        showToast(mapErrorMessage(e), isError: true);
       }
       if (mounted) setState(() => _saving = false);
     } catch (e) {
       clearToken();
-      showToast('Não foi possível validar o token.', true);
+      showToast('Não foi possível validar o token.', isError: true);
       if (mounted) setState(() => _saving = false);
     }
   }

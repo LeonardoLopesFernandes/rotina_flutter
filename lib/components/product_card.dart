@@ -204,14 +204,6 @@ class _ProductCardState extends State<ProductCard>
                         return Container(
                           width: 32,
                           height: 32,
-                          decoration: BoxDecoration(
-                            color: showCheck
-                                ? AppColors.success.withOpacity(0.15)
-                                : (widget.blocked
-                                    ? AppColors.danger.withOpacity(0.15)
-                                    : AppColors.primary.withOpacity(0.1)),
-                            shape: BoxShape.circle,
-                          ),
                           child: Center(
                             child: Transform(
                               alignment: Alignment.center,
@@ -225,6 +217,11 @@ class _ProductCardState extends State<ProductCard>
                                 showCheck ? 'assets/ic_check.png' : 'assets/ic_lapis.png',
                                 width: 20,
                                 height: 20,
+                                color: showCheck
+                                    ? AppColors.success
+                                    : (widget.blocked
+                                        ? AppColors.danger
+                                        : AppColors.primary),
                               ),
                             ),
                           ),

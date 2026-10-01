@@ -70,7 +70,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
         answers: answers,
       ));
       if (!response.success) {
-        showToast(response.message ?? 'Erro ao salvar', true);
+        showToast(response.message ?? 'Erro ao salvar', isError: true);
         return;
       }
       final userName = await Session.getUserName();
@@ -100,7 +100,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           StoredTreatment(treated: true, treatedAt: nowStr, treatedBy: userName, answers: selectedAnswers));
       setState(() => _showSuccessToast = true);
     } catch (e) {
-      showToast('Erro: $e', true);
+      showToast('Erro: $e', isError: true);
     } finally {
       setState(() => _saving = false);
     }

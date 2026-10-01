@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
       showToast('Faça login no navegador. Ao concluir, volte ao app.');
     } catch (e) {
       _waitingBrowserReturn = false;
-      showToast('Não foi possível abrir o navegador: $e', true);
+      showToast('Não foi possível abrir o navegador: $e', isError: true);
     }
   }
 
@@ -173,15 +173,17 @@ class _LoginScreenState extends State<LoginScreen>
       _validatingToken = false;
       final status = e.response?.statusCode;
       if (status == 403 || status == 401) {
-        showToast('Token detectado mas rejeitado (HTTP $status). '
-            'Tente copiar o token novamente no navegador.', true);
+        showToast(
+            'Token detectado mas rejeitado (HTTP $status). '
+            'Tente copiar o token novamente no navegador.',
+            isError: true);
       } else {
-        showToast('Erro ao validar token: ${mapErrorMessage(e)}', true);
+        showToast('Erro ao validar token: ${mapErrorMessage(e)}', isError: true);
       }
     } catch (e) {
       clearToken();
       _validatingToken = false;
-      showToast('Token detectado mas não foi possível validar.', true);
+      showToast('Token detectado mas não foi possível validar.', isError: true);
     }
   }
 

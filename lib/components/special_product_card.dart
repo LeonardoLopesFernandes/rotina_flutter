@@ -118,17 +118,14 @@ class SpecialProductCard extends StatelessWidget {
                   : Container(
                       width: 32,
                       height: 32,
-                      decoration: BoxDecoration(
-                        color: treated
-                            ? AppColors.success.withOpacity(0.15)
-                            : AppColors.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
                       child: Center(
                         child: Image.asset(
                           treated ? 'assets/ic_check.png' : 'assets/ic_lapis.png',
                           width: 20,
                           height: 20,
+                          color: treated
+                              ? AppColors.success
+                              : AppColors.primary,
                         ),
                       ),
                     ),

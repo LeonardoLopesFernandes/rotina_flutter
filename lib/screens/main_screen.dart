@@ -291,7 +291,7 @@ class _MainScreenState extends State<MainScreen> {
                     showToast('Gerando PDF...');
                     final result = await downloadDaySchedulePdf(
                         formatApiDate(controller.selectedDate));
-                    showToast(result.message, true);
+                    showToast(result.message, isError: true);
                   },
                   child: Image.asset('assets/imprimir.png', width: 110, height: 44),
                 ),
