@@ -33,7 +33,7 @@ class TreatedAnswer {
 
   factory TreatedAnswer.fromJson(Map<String, dynamic> json) => TreatedAnswer(
         question: json['question'] as String,
-        shortQuestion: json['shortQuestion'] as String?,
+        shortQuestion: (json['shortQuestion'] ?? json['short_question']) as String?,
         answer: json['answer'] as bool?,
         number: json['number'] as int? ?? 0,
         items: (json['items'] as num?)?.toInt() ?? 0,
@@ -83,21 +83,21 @@ class Item {
     this.departmentCode,
   });
 
-  factory Item.fromJson(Map<String, dynamic> json) => Item(
+factory Item.fromJson(Map<String, dynamic> json) => Item(
         id: json['id'] as String? ?? '',
         ean: json['ean'] as String? ?? '',
         sap: json['sap'] as String? ?? '',
         description: json['description'] as String? ?? '',
         quantityStock: (json['quantityStock'] as num?)?.toInt() ?? 0,
-        saleQuantityDay: (json['saleQuantityDay'] as num?)?.toInt() ?? 0,
+        saleQuantityDay: (json['quantityStock'] as num?)?.toInt() ?? 0,
         saleQuantityMonth: (json['saleQuantityMonth'] as num?)?.toInt() ?? 0,
         grade: json['grade'] as String? ?? '',
         treated: json['treated'] as bool? ?? false,
         answers: (json['answers'] as List<dynamic>?)
             ?.map((e) => TreatedAnswer.fromJson(e as Map<String, dynamic>))
             .toList(),
-        treatedAt: json['treatedAt'] as String?,
-        treatedBy: json['treatedBy'] as String?,
+        treatedAt: (json['treatedAt'] ?? json['treated_at']) as String?,
+        treatedBy: (json['treatedBy'] ?? json['treated_by']) as String?,
         departmentCode: json['departmentCode'] as String?,
       );
 
@@ -213,8 +213,8 @@ class SpecialItem {
         stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
         grade: json['grade'] as String? ?? '',
         daysWithoutSelling: json['daysWithoutSelling'] as String?,
-        treatedBy: json['treatedBy'] as String?,
-        treatedDate: json['treatedDate'] as String?,
+        treatedBy: (json['treatedBy'] ?? json['treated_by']) as String?,
+        treatedDate: (json['treatedDate'] ?? json['treated_date']) as String?,
         question: json['question'] as String?,
       );
 
