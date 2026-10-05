@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
+import 'package:rotina_comercial/auth/auth_provider.dart';
 import 'package:rotina_comercial/components/checklist_modal.dart';
 import 'package:rotina_comercial/components/success_toast.dart';
 import 'package:rotina_comercial/components/product_card.dart';
@@ -151,7 +153,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
           TreatmentBadgeModal(
             visible: _badgeItem != null,
             item: _badgeItem,
-            userName: '',
+            userName: context.read<AuthProvider>().userName,
             onClose: () => setState(() => _badgeItem = null),
           ),
           if (_showSuccessToast)

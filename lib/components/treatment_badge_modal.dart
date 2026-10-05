@@ -22,8 +22,28 @@ class TreatmentBadgeModal extends StatelessWidget {
     if (!visible || item == null) return const SizedBox.shrink();
     final it = item!;
     final treatedAt = it.formattedTreatedAt;
-    final treatedBy = it.effectiveTreatedBy ?? userName;
+    // Quem tratou: usa o valor da API; se vier vazio, cai no usuário logado.
+    final effective = it.effectiveTreatedBy;
+    final treatedBy = (effective != null && effective.trim().isNotEmpty)
+        ? effective
+        : userName;
     final answers = it.answers;
+
+    // Casa a resposta pela numeração; se a API vier sem "number", casa pela
+    // posição (assim a questão marcada aparece mesmo sem número).
+    TreatedAnswer? findAnswer(int number) {
+      final list = answers;
+      if (list == null || list.isEmpty) return null;
+      for (final a in list) {
+        if (a.number == number) return a;
+      }
+      if (list.length == shortQuestions.length &&
+          number >= 1 &&
+          number <= list.length) {
+        return list[number - 1];
+      }
+      return null;
+    }
 
     return Stack(
       children: [
@@ -66,14 +86,9 @@ class TreatmentBadgeModal extends StatelessWidget {
                       child: answers != null
                           ? Column(
                               children: shortQuestions.asMap().entries.map((e) {
-                                final answer = answers.firstWhere(
-                                    (a) => a.number == e.key + 1,
-                                    orElse: () => TreatedAnswer(
-                                        question: '',
-                                        number: e.key + 1,
-                                        items: 0,
-                                        percentage: 0));
-                                final active = isTreatedAnswerActive(answer);
+                                final answer = findAnswer(e.key + 1);
+                                final active = answer != null &&
+                                    isTreatedAnswerActive(answer);
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   child: Row(

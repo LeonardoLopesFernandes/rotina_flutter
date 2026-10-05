@@ -113,10 +113,12 @@ bool sameDay(DateTime a, DateTime b) {
 }
 
 bool isTreatedAnswerActive(dynamic a) {
+  final active = a.active;
   final answer = a.answer;
   final percentage = a.percentage;
   final items = a.items;
-  return answer == true ||
+  return active == true ||
+      answer == true ||
       (percentage != null && percentage > 0) ||
       (items != null && items > 0);
 }
