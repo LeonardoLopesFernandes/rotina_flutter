@@ -653,8 +653,8 @@ class _MainScreenState extends State<MainScreen> {
       child: Center(
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 360),
-          margin: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 400),
+          margin: const EdgeInsets.all(20),
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -695,7 +695,7 @@ class _MainScreenState extends State<MainScreen> {
                           child: Center(
                             child: Text(w,
                                 style: const TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.textMuted,
                                     fontFamily: 'Open Sans')),
@@ -718,6 +718,7 @@ class _MainScreenState extends State<MainScreen> {
                   final selected = sameDay(day, controller.selectedDate);
                   final isToday = sameDay(day, DateTime.now());
                   return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: !isEnabled
                         ? null
                         : () {
@@ -727,8 +728,8 @@ class _MainScreenState extends State<MainScreen> {
                           },
                     child: Center(
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 46,
+                        height: 46,
                         decoration: selected
                             ? const BoxDecoration(
                                 color: AppColors.primary, shape: BoxShape.circle)
@@ -742,7 +743,7 @@ class _MainScreenState extends State<MainScreen> {
                           child: Text(
                             '${day.day}',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 17,
                               color: selected
                                   ? Colors.white
                                   : (isEnabled
