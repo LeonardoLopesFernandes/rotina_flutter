@@ -15,6 +15,9 @@ class DepartmentsController with ChangeNotifier {
   String? _successMessage;
   DateTime _selectedDate = clampToWeekday(DateTime.now());
 
+  /// Cache por data (yyyy-MM-dd): troca de dia fica instantânea ao revisitar.
+  final Map<String, List<Department>> _cache = {};
+
   List<Department> get departments => _departments;
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -27,14 +30,22 @@ class DepartmentsController with ChangeNotifier {
   }
 
   Future<void> loadDataForDate(DateTime date, [bool silent = false]) async {
+    final dateApi = formatApiDate(date);
+    final storageDate = formatStorageDate(date);
+    final cached = _cache[storageDate];
     if (!silent) {
-      _isLoading = true;
       _error = null;
+      if (cached != null) {
+        // Já foi carregada antes: mostra na hora (sem tela de loading).
+        _allDepartments = cached;
+        _departments = cached;
+        _isLoading = false;
+      } else {
+        _isLoading = true;
+      }
       notifyListeners();
     }
     try {
-      final dateApi = formatApiDate(date);
-      final storageDate = formatStorageDate(date);
       final items = await getItems(dateApi);
 
       final allTreatments = await Session.loadAllTreatments(storageDate);
@@ -55,6 +66,7 @@ class DepartmentsController with ChangeNotifier {
       }
       _allDepartments = merged;
       _allDepartments.sort((a, b) => a.department.code.compareTo(b.department.code));
+      _cache[storageDate] = _allDepartments;
       _departments = _allDepartments;
     } on DioException catch (e) {
       _error = mapErrorMessage(e);
@@ -151,6 +163,7 @@ class DepartmentsController with ChangeNotifier {
       return dept;
     }).toList();
     _departments = _allDepartments;
+    _cache[formatStorageDate(date)] = _allDepartments;
     _successMessage = '✅ Item salvo com sucesso!';
     _error = null;
     notifyListeners();

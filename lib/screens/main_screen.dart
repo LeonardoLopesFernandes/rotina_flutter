@@ -344,51 +344,66 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _content(DepartmentsController controller) {
-    if (controller.isLoading) {
+    final list = controller.departments;
+    // Só mostra a tela de loading quando ainda não há lista para exibir.
+    if (controller.isLoading && list.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
-    if (controller.error != null) {
+    if (controller.error != null && list.isEmpty) {
       return Center(
         child: Text(controller.error!,
             style: const TextStyle(color: AppColors.danger, fontSize: 15, fontFamily: 'Open Sans'),
             textAlign: TextAlign.center),
       );
     }
-    if (controller.departments.isEmpty) {
+    if (list.isEmpty) {
       return const Center(
         child: Text('Nenhum item encontrado para esta data',
             style: TextStyle(color: AppColors.textHint, fontSize: 15, fontFamily: 'Open Sans'),
             textAlign: TextAlign.center),
       );
     }
-    return RefreshIndicator(
-      color: AppColors.primary,
-      onRefresh: () => controller.refresh(),
-      child: ListView.builder(
-        itemCount: controller.departments.length,
-        itemBuilder: (context, index) {
-          final dept = controller.departments[index];
-          return DepartmentCard(
-            department: dept,
-            blocked: _blocked,
-            onViewAll: (d) {
-              Navigator.of(context).pushNamed(
-                'DepartmentDetail',
-                arguments: {
-                  'deptCode': d.department.code,
-                  'deptName': d.department.name,
-                  'selectedDate': controller.selectedDate.millisecondsSinceEpoch,
-                  'items': d.items,
+    return Stack(
+      children: [
+        RefreshIndicator(
+          color: AppColors.primary,
+          onRefresh: () => controller.refresh(),
+          child: ListView.builder(
+            itemCount: controller.departments.length,
+            itemBuilder: (context, index) {
+              final dept = controller.departments[index];
+              return DepartmentCard(
+                department: dept,
+                blocked: _blocked,
+                onViewAll: (d) {
+                  Navigator.of(context).pushNamed(
+                    'DepartmentDetail',
+                    arguments: {
+                      'deptCode': d.department.code,
+                      'deptName': d.department.name,
+                      'selectedDate': controller.selectedDate.millisecondsSinceEpoch,
+                      'items': d.items,
+                    },
+                  );
                 },
+                onEditItem: (item) => setState(() => _checklistItem = item),
+                onShowBadge: (item) => setState(() => _badgeItem = item),
               );
             },
-            onEditItem: (item) => setState(() => _checklistItem = item),
-            onShowBadge: (item) => setState(() => _badgeItem = item),
-          );
-        },
-      ),
+          ),
+        ),
+        // Loader fino no topo enquanto atualiza (não some com a lista).
+        if (controller.isLoading)
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(
+                color: AppColors.primary, minHeight: 3),
+          ),
+      ],
     );
   }
 

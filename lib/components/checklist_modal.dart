@@ -208,15 +208,21 @@ class _ChecklistModalState extends State<ChecklistModal> {
               height: 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppColors.primary : null,
-                border: isSelected
-                    ? null
-                    : Border.all(color: const Color(0xFFC0C0C0), width: 2),
+                color: isSelected ? Colors.white : null,
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.success
+                      : const Color(0xFFC0C0C0),
+                  width: 2,
+                ),
               ),
               alignment: Alignment.center,
               child: isSelected
                   ? const Text('✓',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))
+                      style: TextStyle(
+                          color: AppColors.success,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold))
                   : null,
             ),
           ],
