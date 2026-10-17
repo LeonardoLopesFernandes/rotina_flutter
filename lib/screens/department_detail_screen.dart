@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/auth/auth_provider.dart';
@@ -186,17 +187,11 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   ),
                   if (allTreated) ...[
                     const SizedBox(width: 8),
-                    Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.check, color: Colors.white, size: 16),
-                      ),
+                    Lottie.asset(
+                      'assets/lottie/check.json',
+                      width: 44,
+                      height: 44,
+                      repeat: false,
                     ),
                   ],
                 ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/special_answers_modal.dart';
 import 'package:rotina_comercial/components/special_product_card.dart';
@@ -193,17 +194,11 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                                       ),
                                       const SizedBox(width: 6),
                                       if (allTreated)
-                                        Container(
-                                          width: 24,
-                                          height: 24,
-                                          decoration: BoxDecoration(
-                                            color: AppColors.success,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(color: Colors.white, width: 2.5),
-                                          ),
-                                          child: const Center(
-                                            child: Icon(Icons.check, color: Colors.white, size: 14),
-                                          ),
+                                        Lottie.asset(
+                                          'assets/lottie/check.json',
+                                          width: 40,
+                                          height: 40,
+                                          repeat: false,
                                         )
                                       else if (_blocked)
                                         Image.asset('assets/ic_block.png', width: 22, height: 22),
