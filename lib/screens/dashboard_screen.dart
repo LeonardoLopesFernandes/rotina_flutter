@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
@@ -70,7 +71,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: const EdgeInsets.all(12),
                     children: [
                       _card(Icons.check_circle, 'Itens tratados',
-                          _cards != null ? '${_cards!.treatedItemsQuantity} (${_cards!.treatedItemsPercentage}%)' : '—'),
+                          _cards != null ? '${_cards!.treatedItemsQuantity} (${_cards!.treatedItemsPercentage}%)' : '—',
+                          iconWidget: Lottie.asset(
+                            'assets/lottie/check.json',
+                            width: 36,
+                            height: 36,
+                            repeat: false,
+                          )),
                       _card(Icons.business, 'Departamentos tratados',
                           _cards != null ? '${_cards!.treatedDepartmentsQuantity} (${_cards!.treatedDepartmentsPercentage}%)' : '—'),
                       _card(Icons.remove_shopping_cart, 'Itens sem venda tratados', _unsoldValue.isNotEmpty ? _unsoldValue : '—'),
@@ -162,7 +169,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _card(IconData icon, String title, String value) {
+  Widget _card(IconData icon, String title, String value,
+      {Widget? iconWidget}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(15),
@@ -176,7 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 20),
+              iconWidget ?? Icon(icon, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(title,

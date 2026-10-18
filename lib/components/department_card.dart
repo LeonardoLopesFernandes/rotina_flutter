@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/components/product_card.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
@@ -55,16 +56,11 @@ class DepartmentCard extends StatelessWidget {
                 ),
                 if (allTreated) ...[
                   const SizedBox(width: 6),
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.check,
-                        color: AppColors.success, size: 16),
+                  Lottie.asset(
+                    'assets/lottie/check.json',
+                    width: 30,
+                    height: 30,
+                    repeat: false,
                   ),
                 ] else if (blocked) ...[
                   const SizedBox(width: 6),
