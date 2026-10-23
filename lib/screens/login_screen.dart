@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:rotina_comercial/components/animated_logo_title.dart';
 import 'package:rotina_comercial/api/client.dart'
     show setAuthToken, clearToken, getAuthToken;
 import 'package:rotina_comercial/api/endpoints.dart' show getItems;
@@ -246,14 +247,11 @@ class _LoginScreenState extends State<LoginScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/logo_rotina.png', width: 110, height: 110),
-                const SizedBox(height: 12),
-                const Text('Rotina Comercial',
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                        fontFamily: 'Open Sans')),
+                const AnimatedLogoTitle(
+                  logoSize: 110,
+                  title: 'Rotina Comercial',
+                  titleColor: AppColors.primary,
+                ),
                 const SizedBox(height: 32),
                 TextField(
                   controller: _emailController,

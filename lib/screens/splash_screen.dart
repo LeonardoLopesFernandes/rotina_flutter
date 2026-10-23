@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:rotina_comercial/components/animated_logo_title.dart';
 
 class SplashScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -12,8 +13,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
   late AnimationController _zoomOutController;
   late Animation<double> _zoomOutScale;
   late Animation<double> _zoomOutOpacity;
@@ -23,14 +22,6 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     _zoomOutController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -56,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen>
       });
     });
 
-    Timer(const Duration(seconds: 2), () {
+    Timer(const Duration(milliseconds: 2600), () {
       if (mounted && !_zooming) {
         _startZoomOut();
       }
@@ -65,7 +56,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _startZoomOut() {
     _zooming = true;
-    _pulseController.stop();
     _zoomOutController.forward().then((_) {
       if (mounted) widget.onComplete();
     });
@@ -73,7 +63,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _zoomOutController.dispose();
     super.dispose();
   }
@@ -84,9 +73,9 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFFF2F4F8),
       body: Center(
         child: AnimatedBuilder(
-          animation: _zooming ? _zoomOutController : _pulseController,
+          animation: _zoomOutController,
           builder: (context, child) {
-            final scale = _zooming ? _zoomOutScale.value : _pulseAnimation.value;
+            final scale = _zooming ? _zoomOutScale.value : 1.0;
             final opacity = _zooming ? _zoomOutOpacity.value : 1.0;
             return Opacity(
               opacity: opacity,
@@ -99,22 +88,12 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'assets/logo_rotina.png',
-                width: 120,
-                height: 120,
+              const AnimatedLogoTitle(
+                logoSize: 120,
+                title: 'Rotina Comercial',
+                titleColor: Color(0xFFE60014),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Rotina Comercial',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFE60014),
-                  fontFamily: 'Open Sans',
-                ),
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               Text(
                 _dots,
                 style: const TextStyle(
