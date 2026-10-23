@@ -208,42 +208,25 @@ Future<List<BookStatus>> getBooks() async {
       .toList();
 }
 
-/// Todos os books da loja (histórico), via endpoint paginado.
+/// Todos os books (histórico completo), percorrendo as páginas (10/página no site).
 Future<List<BookStatus>> getAllBooks() async {
-  final res = await apiClient.get<Map<String, dynamic>>(
-    'rotina/books/paginated',
-    queryParameters: {'store': store, 'limit': 100, 'offset': 0},
-  );
-  final data = (res.data?['data'] as List?) ?? [];
-  return data
-      .whereType<Map<String, dynamic>>()
-      .map(BookStatus.fromJson)
-      .toList();
-}
-
-Future<BookTreatmentsPage> getBookTreatments(
-  String bookId, {
-  int limit = 50,
-  int offset = 0,
-  String? store,
-}) async {
-  final res = await apiClient.get<Map<String, dynamic>>(
-    'rotina/books/books-treatments-paginated/$bookId',
-    queryParameters: {
-      'limit': limit,
-      'offset': offset,
-      if (store != null && store.isNotEmpty) 'store': store,
-    },
-  );
-  final data = res.data?['data'];
-  final raw = (data is Map ? data['treatments'] : null) as List? ?? [];
-  return BookTreatmentsPage(
-    treatments: raw
+  final all = <BookStatus>[];
+  var offset = 0;
+  for (var i = 0; i < 30; i++) {
+    final res = await apiClient.get<Map<String, dynamic>>(
+      'rotina/books/paginated',
+      queryParameters: {'limit': 100, 'offset': offset},
+    );
+    final data = (res.data?['data'] as List?) ?? [];
+    all.addAll(data
         .whereType<Map<String, dynamic>>()
-        .map(BookTreatment.fromJson)
-        .toList(),
-    totalCount: (res.data?['totalCount'] as num?)?.toInt() ?? 0,
-  );
+        .map(BookStatus.fromJson)
+        .toList());
+    final total = (res.data?['totalCount'] as num?)?.toInt() ?? 0;
+    offset += data.length;
+    if (data.isEmpty || offset >= total) break;
+  }
+  return all;
 }
 
 String bookTreatmentImageUrl(String treatmentId, String filename) =>
