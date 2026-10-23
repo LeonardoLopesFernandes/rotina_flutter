@@ -568,6 +568,11 @@ class BookStatus {
   final int filesQuantity;
   final String status;
   final Map<String, dynamic> treatment;
+  final String createdBy;
+  final List<String> stores;
+  final int treated;
+  final int total;
+  final bool allowed;
 
   const BookStatus({
     required this.bookId,
@@ -581,10 +586,15 @@ class BookStatus {
     required this.filesQuantity,
     required this.status,
     required this.treatment,
+    required this.createdBy,
+    required this.stores,
+    required this.treated,
+    required this.total,
+    required this.allowed,
   });
 
   factory BookStatus.fromJson(Map<String, dynamic> json) => BookStatus(
-        bookId: json['bookId'] as String? ?? '',
+        bookId: (json['bookId'] ?? json['id'] ?? '') as String? ?? '',
         name: json['name'] as String? ?? '',
         description: json['description'] as String? ?? '',
         startDateTime: json['startDateTime'] as String? ?? '',
@@ -602,12 +612,20 @@ class BookStatus {
         treatment: (json['treatment'] as Map?)?.map(
                 (k, v) => MapEntry(k.toString(), v)) ??
             const {},
+        createdBy: json['createdBy'] as String? ?? '',
+        stores: (json['stores'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+        treated:
+            ((json['progress'] as Map?)?['treated'] as num?)?.toInt() ?? 0,
+        total: ((json['progress'] as Map?)?['total'] as num?)?.toInt() ?? 0,
+        allowed: json['allowed'] as bool? ?? false,
       );
 
   /// Pendente = ainda precisa anexar as imagens (ex.: notExecuted).
   bool get pendente {
     final s = status.toLowerCase();
-    if (s == 'executed' || s == 'done' || s == 'completed') return false;
-    return true;
+    return s == 'notexecuted' || s == 'pending';
   }
 }

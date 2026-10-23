@@ -19,6 +19,7 @@ class _BooksScreenState extends State<BooksScreen> {
   bool _loading = true;
   String? _error;
   List<BookStatus> _books = [];
+  Set<String> _pendingIds = {};
   String _query = '';
   int _page = 1;
 
@@ -40,7 +41,21 @@ class _BooksScreenState extends State<BooksScreen> {
       _error = null;
     });
     try {
-      final books = await getBooks();
+      List<BookStatus> books = [];
+      var pendentes = <BookStatus>[];
+      var falhou = false;
+      try {
+        books = await getAllBooks();
+      } catch (_) {
+        falhou = true;
+      }
+      try {
+        pendentes = await getBooks();
+        if (books.isEmpty) books = pendentes;
+      } catch (_) {
+        falhou = true;
+      }
+      if (books.isEmpty && falhou) throw Exception();
       books.sort((a, b) {
         final da = DateTime.tryParse(a.startDateTime) ?? DateTime(2000);
         final db = DateTime.tryParse(b.startDateTime) ?? DateTime(2000);
@@ -49,6 +64,7 @@ class _BooksScreenState extends State<BooksScreen> {
       if (mounted) {
         setState(() {
           _books = books;
+          _pendingIds = pendentes.map((b) => b.bookId).toSet();
           _loading = false;
         });
       }
@@ -99,26 +115,50 @@ class _BooksScreenState extends State<BooksScreen> {
     return '${p(d.day)}/${p(d.month)}/${d.year} ${p(d.hour)}:${p(d.minute)}';
   }
 
-  Widget _chip(bool pendente) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: pendente ? const Color(0xFFFFEBEE) : const Color(0xFFE8F5E9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: pendente
-                  ? const Color(0xFFFFCDD2)
-                  : const Color(0xFFC8E6C9)),
+  String _statusLabel(BookStatus book) {
+    if (_pendingIds.contains(book.bookId)) return 'PENDENTE';
+    final end = DateTime.tryParse(book.endDateTime);
+    if (end != null && end.isBefore(DateTime.now())) return 'ENCERRADO';
+    return 'DISPONÍVEL';
+  }
+
+  Widget _chipFor(BookStatus book) {
+    final label = _statusLabel(book);
+    final pendente = label == 'PENDENTE';
+    final disponivel = label == 'DISPONÍVEL';
+    final fg = pendente
+        ? const Color(0xFFC62828)
+        : disponivel
+            ? const Color(0xFF2E7D32)
+            : const Color(0xFF6B7280);
+    final bg = pendente
+        ? const Color(0xFFFFEBEE)
+        : disponivel
+            ? const Color(0xFFE8F5E9)
+            : const Color(0xFFF3F4F6);
+    final bd = pendente
+        ? const Color(0xFFFFCDD2)
+        : disponivel
+            ? const Color(0xFFC8E6C9)
+            : const Color(0xFFE5E7EB);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: bd),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+          color: fg,
+          fontFamily: 'Open Sans',
         ),
-        child: Text(
-          pendente ? 'PENDENTE' : 'CONCLUÍDO',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: pendente ? const Color(0xFFC62828) : const Color(0xFF2E7D32),
-            fontFamily: 'Open Sans',
-          ),
-        ),
-      );
+      ),
+    );
+  }
 
   Widget _dateColumn(String label, String value) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,7 +283,6 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   Widget _card(BookStatus book) {
-    final pendente = book.pendente;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -274,7 +313,7 @@ class _BooksScreenState extends State<BooksScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _chip(pendente),
+                  _chipFor(book),
                 ],
               ),
               const Divider(height: 16),
@@ -298,6 +337,29 @@ class _BooksScreenState extends State<BooksScreen> {
                   _dateColumn('Fim', _fmt(book.endDateTime)),
                 ],
               ),
+              if (book.createdBy.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Por: ${book.createdBy}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontStyle: FontStyle.italic,
+                      fontFamily: 'Open Sans'),
+                ),
+              ],
+              if (book.total > 0) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Lojas: ${book.treated}/${book.total} tratadas',
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      fontFamily: 'Open Sans'),
+                ),
+              ],
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -405,7 +467,6 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   void _detalhes(BookStatus book) {
-    final pendente = book.pendente;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.white,
@@ -432,7 +493,7 @@ class _BooksScreenState extends State<BooksScreen> {
                         fontFamily: 'Open Sans'),
                   ),
                 ),
-                _chip(pendente),
+                _chipFor(book),
               ],
             ),
             const SizedBox(height: 12),
@@ -448,7 +509,36 @@ class _BooksScreenState extends State<BooksScreen> {
             _linha('Fotos necessárias', '${book.filesQuantity}'),
             if (book.filenames.isNotEmpty)
               _linha('Arquivos', '${book.filenames.length}'),
-            const SizedBox(height: 16),
+            if (book.createdBy.isNotEmpty) _linha('Por', book.createdBy),
+            if (book.total > 0)
+              _linha('Lojas tratadas', '${book.treated}/${book.total}'),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _verFotos(book);
+                },
+                icon: const Icon(Icons.photo_library_outlined,
+                    size: 18, color: AppColors.primary),
+                label: const Text(
+                  'VER FOTOS DAS LOJAS',
+                  style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Open Sans'),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -476,6 +566,26 @@ class _BooksScreenState extends State<BooksScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _verFotos(BookStatus book) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Fotos das lojas',
+            style: TextStyle(fontFamily: 'Open Sans')),
+        content: Text(
+          'As fotos anexadas pelas lojas para "${book.name}" serão exibidas aqui.',
+          style: const TextStyle(fontFamily: 'Open Sans'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

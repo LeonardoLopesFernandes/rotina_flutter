@@ -207,3 +207,16 @@ Future<List<BookStatus>> getBooks() async {
       .map(BookStatus.fromJson)
       .toList();
 }
+
+/// Todos os books da loja (histórico), via endpoint paginado.
+Future<List<BookStatus>> getAllBooks() async {
+  final res = await apiClient.get<Map<String, dynamic>>(
+    'rotina/books/paginated',
+    queryParameters: {'store': store, 'limit': 100, 'offset': 0},
+  );
+  final data = (res.data?['data'] as List?) ?? [];
+  return data
+      .whereType<Map<String, dynamic>>()
+      .map(BookStatus.fromJson)
+      .toList();
+}
