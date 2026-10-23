@@ -4,8 +4,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/auth/auth_provider.dart';
 import 'package:rotina_comercial/components/checklist_modal.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/components/department_card.dart';
 import 'package:rotina_comercial/components/campaign_book_card.dart';
+import 'package:rotina_comercial/components/photo_upload_dialog.dart';
 import 'package:rotina_comercial/components/success_toast.dart';
 import 'package:rotina_comercial/components/treatment_badge_modal.dart';
 import 'package:rotina_comercial/hooks/departments_controller.dart';
@@ -78,6 +80,23 @@ class _MainScreenState extends State<MainScreen> {
     if (mounted) _loadBooks();
   }
 
+  Future<void> _anexarFotos(BookStatus book) async {
+    final fotos = await showDialog<List<XFile>>(
+      context: context,
+      builder: (_) => PhotoUploadDialog(
+        filesQuantity: book.filesQuantity,
+        bookName: book.name,
+      ),
+    );
+    if (fotos == null || fotos.isEmpty || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text('${fotos.length} foto(s) selecionada(s) para ${book.name}.'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<DepartmentsController>();
@@ -142,14 +161,8 @@ class _MainScreenState extends State<MainScreen> {
                             padding: const EdgeInsets.only(bottom: 6),
                             child: CampaignBookCard(
                               book: booksPendentes.first,
-                              onAddPhoto: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Envio de imagens do book será disponibilizado em breve.'),
-                                  ),
-                                );
-                              },
+                              onAddPhoto: () =>
+                                  _anexarFotos(booksPendentes.first),
                               onView: _openBooks,
                             ),
                           ),

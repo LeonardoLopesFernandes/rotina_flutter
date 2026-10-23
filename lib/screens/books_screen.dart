@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
+import 'package:rotina_comercial/components/photo_upload_dialog.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
 
@@ -307,15 +309,25 @@ class _BooksScreenState extends State<BooksScreen> {
                         color: AppColors.textMuted,
                         fontFamily: 'Open Sans'),
                   ),
-                  const Row(
+                  Row(
                     children: [
-                      Text('Ver detalhes',
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                            minWidth: 32, minHeight: 32),
+                        icon: const Icon(
+                            Icons.add_photo_alternate_outlined,
+                            size: 18,
+                            color: AppColors.primary),
+                        onPressed: () => _anexarFotos(book),
+                      ),
+                      const Text('Ver detalhes',
                           style: TextStyle(
                               fontSize: 11,
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                               fontFamily: 'Open Sans')),
-                      Icon(Icons.chevron_right,
+                      const Icon(Icons.chevron_right,
                           size: 16, color: AppColors.primary),
                     ],
                   ),
@@ -375,6 +387,23 @@ class _BooksScreenState extends State<BooksScreen> {
     );
   }
 
+  Future<void> _anexarFotos(BookStatus book) async {
+    final fotos = await showDialog<List<XFile>>(
+      context: context,
+      builder: (_) => PhotoUploadDialog(
+        filesQuantity: book.filesQuantity,
+        bookName: book.name,
+      ),
+    );
+    if (fotos == null || fotos.isEmpty || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content:
+            Text('${fotos.length} foto(s) selecionada(s) para ${book.name}.'),
+      ),
+    );
+  }
+
   void _detalhes(BookStatus book) {
     final pendente = book.pendente;
     showModalBottomSheet<void>(
@@ -419,6 +448,32 @@ class _BooksScreenState extends State<BooksScreen> {
             _linha('Fotos necessárias', '${book.filesQuantity}'),
             if (book.filenames.isNotEmpty)
               _linha('Arquivos', '${book.filenames.length}'),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _anexarFotos(book);
+                },
+                icon: const Icon(Icons.add_photo_alternate_outlined,
+                    color: Colors.white, size: 18),
+                label: const Text(
+                  'ANEXAR IMAGENS',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Open Sans'),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
