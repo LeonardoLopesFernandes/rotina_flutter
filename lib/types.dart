@@ -554,3 +554,60 @@ const List<String> deptsDisableExpiry = [
   'D063',
   'D067'
 ];
+
+/// Book/campanha da loja retornado por GET /rotina/books/{store}.
+class BookStatus {
+  final String bookId;
+  final String name;
+  final String description;
+  final String startDateTime;
+  final String endDateTime;
+  final Map<String, dynamic>? item;
+  final List<String> filenames;
+  final String type;
+  final int filesQuantity;
+  final String status;
+  final Map<String, dynamic> treatment;
+
+  const BookStatus({
+    required this.bookId,
+    required this.name,
+    required this.description,
+    required this.startDateTime,
+    required this.endDateTime,
+    required this.item,
+    required this.filenames,
+    required this.type,
+    required this.filesQuantity,
+    required this.status,
+    required this.treatment,
+  });
+
+  factory BookStatus.fromJson(Map<String, dynamic> json) => BookStatus(
+        bookId: json['bookId'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        startDateTime: json['startDateTime'] as String? ?? '',
+        endDateTime: json['endDateTime'] as String? ?? '',
+        item: json['item'] is Map
+            ? (json['item'] as Map).map((k, v) => MapEntry(k.toString(), v))
+            : null,
+        filenames: (json['filenames'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+        type: json['type'] as String? ?? '',
+        filesQuantity: (json['filesQuantity'] as num?)?.toInt() ?? 0,
+        status: json['status'] as String? ?? '',
+        treatment: (json['treatment'] as Map?)?.map(
+                (k, v) => MapEntry(k.toString(), v)) ??
+            const {},
+      );
+
+  /// Pendente = ainda precisa anexar as imagens (ex.: notExecuted).
+  bool get pendente {
+    final s = status.toLowerCase();
+    if (s == 'executed' || s == 'done' || s == 'completed') return false;
+    return true;
+  }
+}

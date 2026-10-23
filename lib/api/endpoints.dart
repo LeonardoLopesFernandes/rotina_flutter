@@ -196,3 +196,14 @@ Future<({bool saved, String message})> downloadUnsoldItemsPdf() =>
 Future<({bool saved, String message})> downloadNoSalesHistoryItemsPdf() =>
     _downloadPdf('rotina/pdf/generate-no-sales-history-items/$store',
         'Itens_sem_historico_venda.pdf');
+
+/// Books/campanhas pendentes da loja (card da Rotina do dia e tela Books).
+Future<List<BookStatus>> getBooks() async {
+  final res =
+      await apiClient.get<List<dynamic>>('rotina/books/$store');
+  final data = res.data ?? [];
+  return data
+      .whereType<Map<String, dynamic>>()
+      .map(BookStatus.fromJson)
+      .toList();
+}

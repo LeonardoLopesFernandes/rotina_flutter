@@ -5,9 +5,11 @@ import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/auth/auth_provider.dart';
 import 'package:rotina_comercial/components/checklist_modal.dart';
 import 'package:rotina_comercial/components/department_card.dart';
+import 'package:rotina_comercial/components/campaign_book_card.dart';
 import 'package:rotina_comercial/components/success_toast.dart';
 import 'package:rotina_comercial/components/treatment_badge_modal.dart';
 import 'package:rotina_comercial/hooks/departments_controller.dart';
+import 'package:rotina_comercial/screens/books_screen.dart';
 import 'package:rotina_comercial/screens/profile_screen.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
@@ -34,6 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   Item? _badgeItem;
   bool _showSuccessToast = false;
   bool _loaded = false;
+  List<BookStatus> _books = [];
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _MainScreenState extends State<MainScreen> {
       if (mounted && !_loaded) {
         _loaded = true;
         context.read<DepartmentsController>().loadData();
+        _loadBooks();
       }
     });
   }
@@ -60,9 +64,24 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Future<void> _loadBooks() async {
+    try {
+      final books = await getBooks();
+      if (mounted) setState(() => _books = books);
+    } catch (_) {}
+  }
+
+  Future<void> _openBooks() async {
+    setState(() => _showMenu = false);
+    await Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const BooksScreen()));
+    if (mounted) _loadBooks();
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<DepartmentsController>();
+    final booksPendentes = _books.where((b) => b.pendente).toList();
 
     return PopScope(
       canPop: false,
@@ -118,6 +137,37 @@ class _MainScreenState extends State<MainScreen> {
                       children: [
                         _mainCard(controller),
                         const SizedBox(height: 6),
+                        if (booksPendentes.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: CampaignBookCard(
+                              book: booksPendentes.first,
+                              onAddPhoto: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Envio de imagens do book será disponibilizado em breve.'),
+                                  ),
+                                );
+                              },
+                              onView: _openBooks,
+                            ),
+                          ),
+                        if (booksPendentes.length > 1)
+                          GestureDetector(
+                            onTap: _openBooks,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Text(
+                                '+${booksPendentes.length - 1} book(s) pendente(s)',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                    fontFamily: 'Open Sans'),
+                              ),
+                            ),
+                          ),
                         Expanded(
                           child: _content(controller),
                         ),
@@ -449,6 +499,7 @@ class _MainScreenState extends State<MainScreen> {
                   Navigator.of(context).pushNamed('Dashboard');
                 }),
                 _menuItem(Icons.today, 'Rotina do dia', () => setState(() => _showMenu = false)),
+                _menuItem(Icons.menu_book, 'Books', _openBooks),
                 _menuItem(Icons.remove_shopping_cart, 'Itens sem venda', () {
                   setState(() => _showMenu = false);
                   Navigator.of(context).pushNamed('SpecialItems',

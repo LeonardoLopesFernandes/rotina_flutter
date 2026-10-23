@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:rotina_comercial/theme.dart';
+import 'package:rotina_comercial/types.dart';
+
+/// Card de book pendente exibido na Rotina do dia (barra amarela à esquerda).
+class CampaignBookCard extends StatelessWidget {
+  final BookStatus book;
+  final VoidCallback? onAddPhoto;
+  final VoidCallback? onView;
+
+  const CampaignBookCard({
+    super.key,
+    required this.book,
+    this.onAddPhoto,
+    this.onView,
+  });
+
+  String get _itemLabel {
+    final desc = book.item?['description']?.toString() ?? '';
+    if (desc.isNotEmpty) return desc;
+    if (book.type.toLowerCase() == 'management') return 'Administrativo';
+    return book.type.isNotEmpty ? book.type : '—';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pendente = book.pendente;
+    const textStyle = TextStyle(
+      fontSize: 14,
+      color: Colors.black87,
+      fontFamily: 'Open Sans',
+      height: 1.3,
+    );
+    const labelStyle = TextStyle(fontWeight: FontWeight.bold);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 10, color: Colors.amber[600]),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(TextSpan(style: textStyle, children: [
+                        const TextSpan(text: 'Book: ', style: labelStyle),
+                        TextSpan(text: book.name),
+                      ])),
+                      const SizedBox(height: 8),
+                      Text.rich(
+                        TextSpan(style: textStyle, children: [
+                          const TextSpan(
+                              text: 'Descrição: ', style: labelStyle),
+                          TextSpan(
+                              text:
+                                  book.description.isEmpty ? '—' : book.description),
+                        ]),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text.rich(TextSpan(style: textStyle, children: [
+                        const TextSpan(text: 'Item: ', style: labelStyle),
+                        TextSpan(text: _itemLabel),
+                      ])),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('Status: ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                fontFamily: 'Open Sans',
+                              )),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: pendente
+                                  ? Colors.amber[300]
+                                  : const Color(0xFFC8E6C9),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              pendente ? 'Não enviado' : 'Enviado',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                                fontFamily: 'Open Sans',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                                Icons.add_photo_alternate_rounded,
+                                color: AppColors.primary,
+                                size: 22),
+                            onPressed: onAddPhoto,
+                          ),
+                          const SizedBox(width: 24),
+                          IconButton(
+                            icon: const Icon(Icons.visibility_rounded,
+                                color: AppColors.primary, size: 22),
+                            onPressed: onView,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
