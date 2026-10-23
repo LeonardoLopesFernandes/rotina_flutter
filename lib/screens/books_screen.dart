@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/photo_upload_dialog.dart';
+import 'package:rotina_comercial/screens/book_treatments_screen.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
 
@@ -571,23 +572,8 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   void _verFotos(BookStatus book) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Fotos das lojas',
-            style: TextStyle(fontFamily: 'Open Sans')),
-        content: Text(
-          'As fotos anexadas pelas lojas para "${book.name}" serão exibidas aqui.',
-          style: const TextStyle(fontFamily: 'Open Sans'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => BookTreatmentsScreen(book: book)));
   }
 
   Widget _linha(String label, String value) => Padding(

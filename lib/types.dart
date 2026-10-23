@@ -629,3 +629,46 @@ class BookStatus {
     return s == 'notexecuted' || s == 'pending';
   }
 }
+
+class BookTreatment {
+  final String id;
+  final String store;
+  final String status;
+  final List<String> filenames;
+  final int numberOfPhotosSent;
+  final bool allowed;
+
+  const BookTreatment({
+    required this.id,
+    required this.store,
+    required this.status,
+    required this.filenames,
+    required this.numberOfPhotosSent,
+    required this.allowed,
+  });
+
+  factory BookTreatment.fromJson(Map<String, dynamic> json) => BookTreatment(
+        id: json['id'] as String? ?? '',
+        store: json['store'] as String? ?? '',
+        status: json['status'] as String? ?? '',
+        filenames: (json['filenames'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            const [],
+        numberOfPhotosSent:
+            (json['numberOfPhotosSent'] as num?)?.toInt() ?? 0,
+        allowed: json['allowed'] as bool? ?? false,
+      );
+
+  bool get temFotos => filenames.isNotEmpty;
+}
+
+class BookTreatmentsPage {
+  final List<BookTreatment> treatments;
+  final int totalCount;
+
+  const BookTreatmentsPage({
+    required this.treatments,
+    required this.totalCount,
+  });
+}
