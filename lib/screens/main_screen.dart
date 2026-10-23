@@ -161,41 +161,34 @@ class _MainScreenState extends State<MainScreen> {
                           alignment: Alignment.topCenter,
                           child: _ocultarTopo
                               ? const SizedBox(width: double.infinity)
-                              : Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _mainCard(controller),
-                                    const SizedBox(height: 6),
-                                    if (booksPendentes.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 6),
-                                        child: CampaignBookCard(
-                                          book: booksPendentes.first,
-                                          onAddPhoto: () => _anexarFotos(
-                                              booksPendentes.first),
-                                          onView: _openBooks,
-                                        ),
-                                      ),
-                                    if (booksPendentes.length > 1)
-                                      GestureDetector(
-                                        onTap: _openBooks,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              bottom: 6),
-                                          child: Text(
-                                            '+${booksPendentes.length - 1} book(s) pendente(s)',
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: AppColors.primary,
-                                                fontFamily: 'Open Sans'),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                              : _mainCard(controller),
                         ),
+                        const SizedBox(height: 6),
+                        if (booksPendentes.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: CampaignBookCard(
+                              book: booksPendentes.first,
+                              onAddPhoto: () =>
+                                  _anexarFotos(booksPendentes.first),
+                              onView: _openBooks,
+                            ),
+                          ),
+                        if (booksPendentes.length > 1)
+                          GestureDetector(
+                            onTap: _openBooks,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Text(
+                                '+${booksPendentes.length - 1} book(s) pendente(s)',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                    fontFamily: 'Open Sans'),
+                              ),
+                            ),
+                          ),
                         Expanded(
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (n) {
