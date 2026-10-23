@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
 
@@ -128,16 +129,24 @@ class CampaignBookCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(
-                                Icons.add_photo_alternate_rounded,
-                                color: AppColors.primary,
-                                size: 22),
+                            icon: SvgPicture.asset(
+                              'assets/icons/books_add_image.svg',
+                              width: 22,
+                              height: 23,
+                              colorFilter: const ColorFilter.mode(
+                                  AppColors.primary, BlendMode.srcIn),
+                            ),
                             onPressed: onAddPhoto,
                           ),
                           const SizedBox(width: 24),
                           IconButton(
-                            icon: const Icon(Icons.visibility_rounded,
-                                color: AppColors.primary, size: 22),
+                            icon: SvgPicture.asset(
+                              'assets/icons/books_eye.svg',
+                              width: 26,
+                              height: 20,
+                              colorFilter: const ColorFilter.mode(
+                                  AppColors.primary, BlendMode.srcIn),
+                            ),
                             onPressed: onView,
                           ),
                         ],

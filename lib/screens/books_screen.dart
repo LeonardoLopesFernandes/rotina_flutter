@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/photo_upload_dialog.dart';
@@ -378,10 +379,13 @@ class _BooksScreenState extends State<BooksScreen> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
                             minWidth: 32, minHeight: 32),
-                        icon: const Icon(
-                            Icons.add_photo_alternate_outlined,
-                            size: 18,
-                            color: AppColors.primary),
+                        icon: SvgPicture.asset(
+                          'assets/icons/books_add_image.svg',
+                          width: 18,
+                          height: 19,
+                          colorFilter: const ColorFilter.mode(
+                              AppColors.primary, BlendMode.srcIn),
+                        ),
                         onPressed: () => _anexarFotos(book),
                       ),
                       const Text('Ver detalhes',
@@ -390,8 +394,13 @@ class _BooksScreenState extends State<BooksScreen> {
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
                               fontFamily: 'Open Sans')),
-                      const Icon(Icons.chevron_right,
-                          size: 16, color: AppColors.primary),
+                      SvgPicture.asset(
+                        'assets/icons/books_eye.svg',
+                        width: 20,
+                        height: 15,
+                        colorFilter: const ColorFilter.mode(
+                            AppColors.primary, BlendMode.srcIn),
+                      ),
                     ],
                   ),
                 ],
@@ -521,8 +530,13 @@ class _BooksScreenState extends State<BooksScreen> {
                   Navigator.of(context).pop();
                   _verFotos(book);
                 },
-                icon: const Icon(Icons.photo_library_outlined,
-                    size: 18, color: AppColors.primary),
+                icon: SvgPicture.asset(
+                  'assets/icons/books_image.svg',
+                  width: 18,
+                  height: 18,
+                  colorFilter: const ColorFilter.mode(
+                      AppColors.primary, BlendMode.srcIn),
+                ),
                 label: const Text(
                   'VER FOTOS DAS LOJAS',
                   style: TextStyle(
@@ -547,8 +561,13 @@ class _BooksScreenState extends State<BooksScreen> {
                   Navigator.of(context).pop();
                   _anexarFotos(book);
                 },
-                icon: const Icon(Icons.add_photo_alternate_outlined,
-                    color: Colors.white, size: 18),
+                icon: SvgPicture.asset(
+                  'assets/icons/books_add_image.svg',
+                  width: 18,
+                  height: 19,
+                  colorFilter: const ColorFilter.mode(
+                      Colors.white, BlendMode.srcIn),
+                ),
                 label: const Text(
                   'ANEXAR IMAGENS',
                   style: TextStyle(
