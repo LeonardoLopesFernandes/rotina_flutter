@@ -198,9 +198,9 @@ Future<({bool saved, String message})> downloadNoSalesHistoryItemsPdf() =>
         'Itens_sem_historico_venda.pdf');
 
 /// Books/campanhas pendentes da loja (card da Rotina do dia e tela Books).
-Future<List<BookStatus>> getBooks() async {
-  final res =
-      await apiClient.get<List<dynamic>>('rotina/books/$store');
+Future<List<BookStatus>> getBooks({String? loja}) async {
+  final filtro = (loja == null || loja.trim().isEmpty) ? store : loja.trim();
+  final res = await apiClient.get<List<dynamic>>('rotina/books/$filtro');
   final data = res.data ?? [];
   return data
       .whereType<Map<String, dynamic>>()
@@ -209,13 +209,19 @@ Future<List<BookStatus>> getBooks() async {
 }
 
 /// Todos os books (histórico completo), percorrendo as páginas (10/página no site).
-Future<List<BookStatus>> getAllBooks() async {
+/// Quando [loja] é informada, filtra os books daquela loja.
+Future<List<BookStatus>> getAllBooks({String? loja}) async {
+  final filtro = loja?.trim() ?? '';
   final all = <BookStatus>[];
   var offset = 0;
   for (var i = 0; i < 30; i++) {
     final res = await apiClient.get<Map<String, dynamic>>(
       'rotina/books/paginated',
-      queryParameters: {'limit': 100, 'offset': offset},
+      queryParameters: {
+        'limit': 100,
+        'offset': offset,
+        if (filtro.isNotEmpty) 'store': filtro,
+      },
     );
     final data = (res.data?['data'] as List?) ?? [];
     all.addAll(data

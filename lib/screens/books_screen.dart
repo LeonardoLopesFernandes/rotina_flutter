@@ -18,6 +18,7 @@ class BooksScreen extends StatefulWidget {
 class _BooksScreenState extends State<BooksScreen> {
   static const int _perPage = 10;
   final _searchController = TextEditingController();
+  final _lojaController = TextEditingController();
   bool _loading = true;
   String? _error;
   List<BookStatus> _books = [];
@@ -34,7 +35,13 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _lojaController.dispose();
     super.dispose();
+  }
+
+  void _aplicarLoja() {
+    setState(() => _page = 1);
+    _load();
   }
 
   Future<void> _load() async {
@@ -43,16 +50,17 @@ class _BooksScreenState extends State<BooksScreen> {
       _error = null;
     });
     try {
+      final loja = _lojaController.text.trim();
       List<BookStatus> books = [];
       var pendentes = <BookStatus>[];
       var falhou = false;
       try {
-        books = await getAllBooks();
+        books = await getAllBooks(loja: loja);
       } catch (_) {
         falhou = true;
       }
       try {
-        pendentes = await getBooks();
+        pendentes = await getBooks(loja: loja);
         if (books.isEmpty) books = pendentes;
       } catch (_) {
         falhou = true;
@@ -203,7 +211,33 @@ class _BooksScreenState extends State<BooksScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: TextField(
+              controller: _lojaController,
+              textCapitalization: TextCapitalization.characters,
+              onSubmitted: (_) => _aplicarLoja(),
+              style: const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
+              decoration: InputDecoration(
+                hintText: 'Filtrar por loja (ex.: L291)',
+                hintStyle:
+                    const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
+                prefixIcon: const Icon(Icons.storefront, size: 20),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.search, size: 20),
+                  onPressed: _aplicarLoja,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
             child: TextField(
               controller: _searchController,
               onChanged: _setQuery,
