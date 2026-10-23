@@ -229,5 +229,30 @@ Future<List<BookStatus>> getAllBooks() async {
   return all;
 }
 
+Future<BookTreatmentsPage> getBookTreatments(
+  String bookId, {
+  int limit = 50,
+  int offset = 0,
+  String? store,
+}) async {
+  final res = await apiClient.get<Map<String, dynamic>>(
+    'rotina/books/books-treatments-paginated/$bookId',
+    queryParameters: {
+      'limit': limit,
+      'offset': offset,
+      if (store != null && store.isNotEmpty) 'store': store,
+    },
+  );
+  final data = res.data?['data'];
+  final raw = (data is Map ? data['treatments'] : null) as List? ?? [];
+  return BookTreatmentsPage(
+    treatments: raw
+        .whereType<Map<String, dynamic>>()
+        .map(BookTreatment.fromJson)
+        .toList(),
+    totalCount: (res.data?['totalCount'] as num?)?.toInt() ?? 0,
+  );
+}
+
 String bookTreatmentImageUrl(String treatmentId, String filename) =>
     '${baseUrl}rotina/books/store-treatment/$treatmentId/image?filename=${Uri.encodeQueryComponent(filename)}';

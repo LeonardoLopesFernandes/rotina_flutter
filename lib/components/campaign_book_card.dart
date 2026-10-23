@@ -22,6 +22,13 @@ class CampaignBookCard extends StatelessWidget {
     return book.type.isNotEmpty ? book.type : '—';
   }
 
+  String get _prazo {
+    final d = DateTime.tryParse(book.endDateTime);
+    if (d == null) return book.endDateTime;
+    final p = (int n) => n.toString().padLeft(2, '0');
+    return '${p(d.day)}/${p(d.month)}/${d.year} ${p(d.hour)}:${p(d.minute)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final pendente = book.pendente;
@@ -79,6 +86,11 @@ class CampaignBookCard extends StatelessWidget {
                       Text.rich(TextSpan(style: textStyle, children: [
                         const TextSpan(text: 'Item: ', style: labelStyle),
                         TextSpan(text: _itemLabel),
+                      ])),
+                      const SizedBox(height: 8),
+                      Text.rich(TextSpan(style: textStyle, children: [
+                        const TextSpan(text: 'Prazo: ', style: labelStyle),
+                        TextSpan(text: _prazo),
                       ])),
                       const SizedBox(height: 8),
                       Row(

@@ -38,6 +38,7 @@ class _MainScreenState extends State<MainScreen> {
   Item? _badgeItem;
   bool _showSuccessToast = false;
   bool _loaded = false;
+  bool _ocultarTopo = false;
   List<BookStatus> _books = [];
 
   @override
@@ -154,35 +155,66 @@ class _MainScreenState extends State<MainScreen> {
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
                     child: Column(
                       children: [
-                        _mainCard(controller),
-                        const SizedBox(height: 6),
-                        if (booksPendentes.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: CampaignBookCard(
-                              book: booksPendentes.first,
-                              onAddPhoto: () =>
-                                  _anexarFotos(booksPendentes.first),
-                              onView: _openBooks,
-                            ),
-                          ),
-                        if (booksPendentes.length > 1)
-                          GestureDetector(
-                            onTap: _openBooks,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: Text(
-                                '+${booksPendentes.length - 1} book(s) pendente(s)',
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                    fontFamily: 'Open Sans'),
-                              ),
-                            ),
-                          ),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeInOut,
+                          alignment: Alignment.topCenter,
+                          child: _ocultarTopo
+                              ? const SizedBox(width: double.infinity)
+                              : Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _mainCard(controller),
+                                    const SizedBox(height: 6),
+                                    if (booksPendentes.isNotEmpty)
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 6),
+                                        child: CampaignBookCard(
+                                          book: booksPendentes.first,
+                                          onAddPhoto: () => _anexarFotos(
+                                              booksPendentes.first),
+                                          onView: _openBooks,
+                                        ),
+                                      ),
+                                    if (booksPendentes.length > 1)
+                                      GestureDetector(
+                                        onTap: _openBooks,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 6),
+                                          child: Text(
+                                            '+${booksPendentes.length - 1} book(s) pendente(s)',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primary,
+                                                fontFamily: 'Open Sans'),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                        ),
                         Expanded(
-                          child: _content(controller),
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (n) {
+                              if (n.depth == 0 &&
+                                  n is ScrollUpdateNotification) {
+                                final dy = n.scrollDelta ?? 0;
+                                if (dy > 4 && !_ocultarTopo) {
+                                  setState(() => _ocultarTopo = true);
+                                } else if (dy < -4 && _ocultarTopo) {
+                                  setState(() => _ocultarTopo = false);
+                                } else if (n.metrics.pixels <= 0 &&
+                                    _ocultarTopo) {
+                                  setState(() => _ocultarTopo = false);
+                                }
+                              }
+                              return false;
+                            },
+                            child: _content(controller),
+                          ),
                         ),
                       ],
                     ),
