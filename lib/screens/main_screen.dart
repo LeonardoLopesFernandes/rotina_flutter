@@ -167,11 +167,17 @@ class _MainScreenState extends State<MainScreen> {
                         if (booksPendentes.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 6),
-                            child: CampaignBookCard(
-                              book: booksPendentes.first,
-                              onAddPhoto: () =>
-                                  _anexarFotos(booksPendentes.first),
-                              onView: _openBooks,
+                            child: AnimatedSize(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              alignment: Alignment.topCenter,
+                              child: CampaignBookCard(
+                                book: booksPendentes.first,
+                                minimalista: _ocultarTopo,
+                                onAddPhoto: () =>
+                                    _anexarFotos(booksPendentes.first),
+                                onView: _openBooks,
+                              ),
                             ),
                           ),
                         if (booksPendentes.length > 1)
@@ -194,14 +200,13 @@ class _MainScreenState extends State<MainScreen> {
                             onNotification: (n) {
                               if (n.depth == 0 &&
                                   n is ScrollUpdateNotification) {
-                                final dy = n.scrollDelta ?? 0;
-                                if (dy > 4 && !_ocultarTopo) {
+                                if (n.metrics.pixels <= 0) {
+                                  if (_ocultarTopo) {
+                                    setState(() => _ocultarTopo = false);
+                                  }
+                                } else if ((n.scrollDelta ?? 0) > 4 &&
+                                    !_ocultarTopo) {
                                   setState(() => _ocultarTopo = true);
-                                } else if (dy < -4 && _ocultarTopo) {
-                                  setState(() => _ocultarTopo = false);
-                                } else if (n.metrics.pixels <= 0 &&
-                                    _ocultarTopo) {
-                                  setState(() => _ocultarTopo = false);
                                 }
                               }
                               return false;
