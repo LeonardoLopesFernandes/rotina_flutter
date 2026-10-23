@@ -235,11 +235,32 @@ Future<List<BookStatus>> getAllBooks({String? loja}) async {
   return all;
 }
 
+Future<List<String>> getRegions() async {
+  final res = await apiClient.get<List<dynamic>>(
+    'rotina/stores/regions',
+    queryParameters: {'includeAll': true},
+  );
+  return (res.data ?? []).map((e) => e.toString()).toList();
+}
+
+Future<List<StoreDistrict>> getDistricts() async {
+  final res = await apiClient.get<List<dynamic>>(
+    'rotina/stores/districts',
+    queryParameters: {'includeAll': true},
+  );
+  return (res.data ?? [])
+      .whereType<Map<String, dynamic>>()
+      .map(StoreDistrict.fromJson)
+      .toList();
+}
+
 Future<BookTreatmentsPage> getBookTreatments(
   String bookId, {
   int limit = 50,
   int offset = 0,
   String? store,
+  String? region,
+  String? district,
 }) async {
   final res = await apiClient.get<Map<String, dynamic>>(
     'rotina/books/books-treatments-paginated/$bookId',
@@ -247,6 +268,8 @@ Future<BookTreatmentsPage> getBookTreatments(
       'limit': limit,
       'offset': offset,
       if (store != null && store.isNotEmpty) 'store': store,
+      if (region != null && region.isNotEmpty) 'region': region,
+      if (district != null && district.isNotEmpty) 'district': district,
     },
   );
   final data = res.data?['data'];

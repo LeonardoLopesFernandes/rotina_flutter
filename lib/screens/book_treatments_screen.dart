@@ -17,6 +17,10 @@ class BookTreatmentsScreen extends StatefulWidget {
 class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   static const int _limit = 50;
   final _storeController = TextEditingController();
+  List<String> _regions = [];
+  List<StoreDistrict> _districts = [];
+  String? _region;
+  String? _district;
   bool _loading = true;
   String? _error;
   List<BookTreatment> _treatments = [];
@@ -26,7 +30,44 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   @override
   void initState() {
     super.initState();
+    _carregarFiltros();
     _load(reset: true);
+  }
+
+  Future<void> _carregarFiltros() async {
+    try {
+      final results = await Future.wait([getRegions(), getDistricts()]);
+      if (mounted) {
+        setState(() {
+          _regions = results[0] as List<String>;
+          _districts = results[1] as List<StoreDistrict>;
+        });
+      }
+    } catch (_) {}
+  }
+
+  List<StoreDistrict> get _distritosVisiveis {
+    if (_region == null) return _districts;
+    return _districts.where((d) => d.zone == _region).toList();
+  }
+
+  InputDecoration _filtroDecoration(String hint) => InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, fontFamily: 'Open Sans'),
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        filled: true,
+        fillColor: const Color(0xFFF7F7F7),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+      );
+
+  void _aplicar() {
+    setState(() => _offset = 0);
+    _load();
   }
 
   @override
@@ -53,6 +94,8 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         limit: _limit,
         offset: _offset,
         store: _storeController.text.trim(),
+        region: _region,
+        district: _district,
       );
       if (mounted) {
         setState(() {
@@ -180,26 +223,113 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: TextField(
-              controller: _storeController,
-              onSubmitted: (_) => _load(reset: true),
-              style: const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
-              decoration: InputDecoration(
-                hintText: 'Filtrar por loja (ex.: L998)',
-                hintStyle:
-                    const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
-                prefixIcon: const Icon(Icons.storefront, size: 20),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.search, size: 20),
-                  onPressed: () => _load(reset: true),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: EdgeInsets.zero,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _region ?? '',
+                          isExpanded: true,
+                          decoration: _filtroDecoration('Região'),
+                          items: [
+                            const DropdownMenuItem(
+                                value: '', child: Text('Todas as regiões')),
+                            ..._regions.map((r) => DropdownMenuItem(
+                                value: r, child: Text(r))),
+                          ],
+                          onChanged: (v) {
+                            setState(() {
+                              _region =
+                                  (v == null || v.isEmpty) ? null : v;
+                              _district = null;
+                            });
+                            _aplicar();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _district ?? '',
+                          isExpanded: true,
+                          decoration: _filtroDecoration('Distrito'),
+                          items: [
+                            const DropdownMenuItem(
+                                value: '',
+                                child: Text('Todos os distritos')),
+                            ..._distritosVisiveis.map((d) => DropdownMenuItem(
+                                  value: d.code,
+                                  child: Text('${d.code} - ${d.name}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                                )),
+                          ],
+                          onChanged: (v) {
+                            setState(() => _district =
+                                (v == null || v.isEmpty) ? null : v);
+                            _aplicar();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _storeController,
+                          onSubmitted: (_) => _aplicar(),
+                          style: const TextStyle(
+                              fontSize: 14, fontFamily: 'Open Sans'),
+                          decoration:
+                              _filtroDecoration('Loja (ex.: L998)').copyWith(
+                            prefixIcon:
+                                const Icon(Icons.storefront, size: 20),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.search, size: 20),
+                              onPressed: _aplicar,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _region = null;
+                            _district = null;
+                            _storeController.clear();
+                          });
+                          _aplicar();
+                        },
+                        child: const Text(
+                          'LIMPAR',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            fontFamily: 'Open Sans',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

@@ -672,3 +672,21 @@ class BookTreatmentsPage {
     required this.totalCount,
   });
 }
+
+class StoreDistrict {
+  final String code;
+  final String name;
+  final String zone;
+
+  const StoreDistrict({
+    required this.code,
+    required this.name,
+    required this.zone,
+  });
+
+  factory StoreDistrict.fromJson(Map<String, dynamic> json) => StoreDistrict(
+        code: json['districtCode'] as String? ?? '',
+        name: json['districtName'] as String? ?? '',
+        zone: json['districtZone'] as String? ?? '',
+      );
+}
