@@ -79,6 +79,11 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         return 'Em análise';
       case 'executed':
         return 'Enviado';
+      case 'approved':
+        return 'Aprovado';
+      case 'notapproved':
+      case 'not_approved':
+        return 'Não aprovado';
       default:
         return status.isEmpty ? '—' : status;
     }
@@ -92,6 +97,11 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         return const Color(0xFF1565C0);
       case 'executed':
         return const Color(0xFF2E7D32);
+      case 'approved':
+        return const Color(0xFF2E7D32);
+      case 'notapproved':
+      case 'not_approved':
+        return const Color(0xFFC62828);
       default:
         return Colors.grey;
     }
@@ -104,7 +114,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   int get _page => (_offset / _limit).floor() + 1;
 
-  void _verImagem(String url) {
+  void _verImagem(String url, String store) {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black,
@@ -113,7 +123,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
-          title: const Text('Foto da loja'),
+          title: Text('Foto da loja $store'),
         ),
         body: InteractiveViewer(
           child: Center(
@@ -360,7 +370,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
                     final url =
                         bookTreatmentImageUrl(t.id, t.filenames[i]);
                     return GestureDetector(
-                      onTap: () => _verImagem(url),
+                      onTap: () => _verImagem(url, t.store),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
