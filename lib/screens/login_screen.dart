@@ -85,9 +85,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _handleLogin() {
     _autoLoginDisparado = true;
-    _saveCredentials();
     Navigator.of(context)
-        .pushNamed('LoginWebView', arguments: {'autoLogin': true});
+        .pushNamed('LoginWebView', arguments: {'autoLogin': false});
   }
 
   Future<void> _handleOpenBrowser() async {
@@ -253,33 +252,16 @@ class _LoginScreenState extends State<LoginScreen>
                   titleColor: AppColors.primary,
                 ),
                 const SizedBox(height: 32),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style:
-                      const TextStyle(fontSize: 16, fontFamily: 'Open Sans'),
-                  decoration: _inputDecoration('E-mail'),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  style:
-                      const TextStyle(fontSize: 16, fontFamily: 'Open Sans'),
-                  decoration: _inputDecoration('Senha').copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: AppColors.textMuted,
-                      ),
-                      onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
-                    ),
+                const Text(
+                  'americanas.io',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Open Sans',
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 if (_validatingToken)
                   const Padding(
                     padding: EdgeInsets.only(bottom: 12),
