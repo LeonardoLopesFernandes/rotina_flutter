@@ -169,15 +169,30 @@ class CampaignBookCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Text.rich(TextSpan(style: textStyle, children: [
-                        const TextSpan(text: 'Item: ', style: labelStyle),
-                        TextSpan(text: _itemLabel),
-                      ])),
-                      const SizedBox(height: 8),
-                      Text.rich(TextSpan(style: textStyle, children: [
-                        const TextSpan(text: 'Prazo: ', style: labelStyle),
-                        TextSpan(text: _prazo),
-                      ])),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(style: textStyle, children: [
+                                const TextSpan(
+                                    text: 'Item: ', style: labelStyle),
+                                TextSpan(text: _itemLabel),
+                              ]),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text.rich(
+                            TextSpan(style: textStyle, children: [
+                              const TextSpan(
+                                  text: 'Prazo: ', style: labelStyle),
+                              TextSpan(text: _prazo),
+                            ]),
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -207,28 +222,31 @@ class CampaignBookCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                          const Spacer(),
                           IconButton(
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                                minWidth: 34, minHeight: 34),
                             icon: SvgPicture.asset(
                               'assets/icons/books_add_image.svg',
-                              width: 22,
-                              height: 23,
+                              width: 20,
+                              height: 21,
                               colorFilter: const ColorFilter.mode(
                                   AppColors.primary, BlendMode.srcIn),
                             ),
                             onPressed: onAddPhoto,
                           ),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: 4),
                           IconButton(
+                            padding: EdgeInsets.zero,
+                            visualDensity: VisualDensity.compact,
+                            constraints: const BoxConstraints(
+                                minWidth: 34, minHeight: 34),
                             icon: SvgPicture.asset(
                               'assets/icons/books_eye.svg',
-                              width: 26,
-                              height: 20,
+                              width: 24,
+                              height: 18,
                               colorFilter: const ColorFilter.mode(
                                   AppColors.primary, BlendMode.srcIn),
                             ),
