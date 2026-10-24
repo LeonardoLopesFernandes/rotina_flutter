@@ -75,7 +75,12 @@ class CampaignBookCard extends StatelessWidget {
                                     text: 'Book: ',
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold)),
-                                TextSpan(text: book.name),
+                                TextSpan(
+                                  text: book.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary),
+                                ),
                               ],
                             ),
                             maxLines: 1,
@@ -154,7 +159,12 @@ class CampaignBookCard extends StatelessWidget {
                     children: [
                       Text.rich(TextSpan(style: textStyle, children: [
                         const TextSpan(text: 'Book: ', style: labelStyle),
-                        TextSpan(text: book.name),
+                        TextSpan(
+                          text: book.name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary),
+                        ),
                       ])),
                       const SizedBox(height: 8),
                       Text.rich(
