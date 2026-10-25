@@ -27,7 +27,9 @@ class _PhotoUploadDialogState extends State<PhotoUploadDialog> {
     final restante = _requerido - _fotos.length;
     if (restante <= 0) return;
     final picked = await _picker.pickMultiImage(
-      imageQuality: 85,
+      maxWidth: 1280,
+      maxHeight: 1280,
+      imageQuality: 70,
       limit: restante,
     );
     if (picked.isEmpty || !mounted) return;

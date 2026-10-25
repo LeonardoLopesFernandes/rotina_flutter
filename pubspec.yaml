@@ -39,6 +39,7 @@ dependencies:
   webview_flutter_android: ^4.3.3
   shared_preferences: ^2.3.2
   image_picker: ^1.2.3
+  image: ^4.9.2
   url_launcher: ^6.3.0
   cronet_http: ^1.2.0
   http: ^1.2.0

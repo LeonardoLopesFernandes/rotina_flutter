@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:rotina_comercial/api/client.dart';
@@ -293,12 +297,16 @@ Future<void> uploadBookPhotos(
   final form = FormData();
   for (final file in files) {
     final name = file.name.isNotEmpty ? file.name : 'foto.jpg';
+    final prepared = await _prepareImageBytes(file);
+    final uploadName = prepared.converted ? _jpegName(name) : name;
     form.files.add(MapEntry(
       'files',
-      await MultipartFile.fromFile(
-        file.path,
-        filename: name,
-        contentType: _imageMediaType(name),
+      MultipartFile.fromBytes(
+        prepared.bytes,
+        filename: uploadName,
+        contentType: prepared.converted
+            ? DioMediaType('image', 'jpeg')
+            : _imageMediaType(name),
       ),
     ));
   }
@@ -309,6 +317,39 @@ Future<void> uploadBookPhotos(
     },
     data: form,
   );
+}
+
+Future<({Uint8List bytes, bool converted})> _prepareImageBytes(
+    XFile file) async {
+  final raw = await file.readAsBytes();
+  // Mantém a foto original quando já está leve; comprime só o que pode
+  // estourar o limite do servidor (erro 413).
+  if (raw.lengthInBytes <= 900 * 1024) {
+    return (bytes: raw, converted: false);
+  }
+  return (bytes: await compute(_compressImage, raw), converted: true);
+}
+
+String _jpegName(String name) {
+  final dot = name.lastIndexOf('.');
+  final base = dot > 0 ? name.substring(0, dot) : name;
+  return '$base.jpg';
+}
+
+Uint8List _compressImage(Uint8List raw) {
+  final decoded = img.decodeImage(raw);
+  if (decoded == null) return raw;
+  var image = decoded;
+  const maxDim = 1280;
+  if (image.width > maxDim || image.height > maxDim) {
+    image = img.copyResize(
+      image,
+      width: image.width >= image.height ? maxDim : null,
+      height: image.height > image.width ? maxDim : null,
+      interpolation: img.Interpolation.linear,
+    );
+  }
+  return Uint8List.fromList(img.encodeJpg(image, quality: 72));
 }
 
 DioMediaType _imageMediaType(String name) {
