@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
@@ -50,43 +52,55 @@ class _BooksScreenState extends State<BooksScreen> {
       _loading = true;
       _error = null;
     });
-    try {
-      final loja = _lojaController.text.trim();
-      List<BookStatus> books = [];
-      var pendentes = <BookStatus>[];
-      var falhou = false;
+    final loja = _lojaController.text.trim();
+    var falhou = false;
+
+    Future<List<BookStatus>> safe(Future<List<BookStatus>> future) async {
       try {
-        books = await getAllBooks(loja: loja);
+        return await future;
       } catch (_) {
         falhou = true;
-      }
-      try {
-        pendentes = await getBooks(loja: loja);
-        if (books.isEmpty) books = pendentes;
-      } catch (_) {
-        falhou = true;
-      }
-      if (books.isEmpty && falhou) throw Exception();
-      books.sort((a, b) {
-        final da = DateTime.tryParse(a.startDateTime) ?? DateTime(2000);
-        final db = DateTime.tryParse(b.startDateTime) ?? DateTime(2000);
-        return db.compareTo(da);
-      });
-      if (mounted) {
-        setState(() {
-          _books = books;
-          _pendingIds = pendentes.map((b) => b.bookId).toSet();
-          _loading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _error = 'Não foi possível carregar os books.';
-          _loading = false;
-        });
+        return <BookStatus>[];
       }
     }
+
+    // Dispara as duas buscas em paralelo: os pendentes aparecem assim que
+    // chegam, sem esperar o histórico completo (que pode ser lento).
+    final pendentesFuture =
+        safe(getBooks(loja: loja).timeout(const Duration(seconds: 15)));
+    final todosFuture = safe(getAllBooks(loja: loja));
+
+    pendentesFuture.then((pendentes) {
+      if (!mounted || pendentes.isEmpty) return;
+      setState(() {
+        _books = pendentes;
+        _pendingIds = pendentes.map((b) => b.bookId).toSet();
+        _loading = false;
+      });
+    });
+
+    final pendentes = await pendentesFuture;
+    var books = await todosFuture;
+    if (books.isEmpty) books = pendentes;
+    if (!mounted) return;
+    if (books.isEmpty) {
+      setState(() {
+        _error = falhou ? 'Não foi possível carregar os books.' : null;
+        _loading = false;
+      });
+      return;
+    }
+    books.sort((a, b) {
+      final da = DateTime.tryParse(a.startDateTime) ?? DateTime(2000);
+      final db = DateTime.tryParse(b.startDateTime) ?? DateTime(2000);
+      return db.compareTo(da);
+    });
+    setState(() {
+      _books = books;
+      _pendingIds = pendentes.map((b) => b.bookId).toSet();
+      _loading = false;
+      _error = null;
+    });
   }
 
   List<BookStatus> get _filtrados {

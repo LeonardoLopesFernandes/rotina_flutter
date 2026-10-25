@@ -53,7 +53,7 @@ Future<void> _handleSessionExpired() async {
 final Dio apiClient = Dio(BaseOptions(
   baseUrl: baseUrl,
   connectTimeout: const Duration(seconds: 60),
-  receiveTimeout: const Duration(seconds: 60),
+  receiveTimeout: const Duration(seconds: 180),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json, text/plain, */*',

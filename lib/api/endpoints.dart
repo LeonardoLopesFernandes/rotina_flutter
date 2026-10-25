@@ -52,7 +52,7 @@ Future<TreatedItemResponse> saveTreatedItem(TreatedItemRequest request) async {
   }
 }
 
-Future<CardsPercentageResponse> getCardsPercentage(String date) async {
+Future<CardsPercentageResponse> getCardsPercentage([String? date]) async {
   final res = await apiClient.post<Map<String, dynamic>>(
     'rotina/treated-items/cards-quantity-percentage',
     data: _requestBody(date: date),
@@ -70,7 +70,7 @@ Future<List<RoutineStatusItem>> getRoutineStatusList() async {
       .toList();
 }
 
-Future<List<ByAnswerItem>> getTreatedByAnswers(String date) async {
+Future<List<ByAnswerItem>> getTreatedByAnswers([String? date]) async {
   final res = await apiClient.post<List<dynamic>>(
     'rotina/treated-items/by-answers',
     data: _requestBody(date: date),
@@ -213,29 +213,34 @@ Future<List<BookStatus>> getBooks({String? loja}) async {
       .toList();
 }
 
-/// Todos os books (histórico completo), percorrendo as páginas (10/página no site).
-/// Quando [loja] é informada, filtra os books daquela loja.
+/// Books da loja (histórico), percorrendo as páginas (10/página no site).
+/// Limita a 10 páginas e devolve o que já carregou em caso de erro/timeout,
+/// para a tela nunca ficar travada esperando o histórico inteiro.
 Future<List<BookStatus>> getAllBooks({String? loja}) async {
   final filtro = loja?.trim() ?? '';
   final all = <BookStatus>[];
   var offset = 0;
-  for (var i = 0; i < 30; i++) {
-    final res = await apiClient.get<Map<String, dynamic>>(
-      'rotina/books/paginated',
-      queryParameters: {
-        'limit': 100,
-        'offset': offset,
-        if (filtro.isNotEmpty) 'store': filtro,
-      },
-    );
-    final data = (res.data?['data'] as List?) ?? [];
-    all.addAll(data
-        .whereType<Map<String, dynamic>>()
-        .map(BookStatus.fromJson)
-        .toList());
-    final total = (res.data?['totalCount'] as num?)?.toInt() ?? 0;
-    offset += data.length;
-    if (data.isEmpty || offset >= total) break;
+  for (var i = 0; i < 10; i++) {
+    try {
+      final res = await apiClient.get<Map<String, dynamic>>(
+        'rotina/books/paginated',
+        queryParameters: {
+          'limit': 10,
+          'offset': offset,
+          if (filtro.isNotEmpty) 'store': filtro,
+        },
+      ).timeout(const Duration(seconds: 15));
+      final data = (res.data?['data'] as List?) ?? [];
+      all.addAll(data
+          .whereType<Map<String, dynamic>>()
+          .map(BookStatus.fromJson)
+          .toList());
+      final total = (res.data?['totalCount'] as num?)?.toInt() ?? 0;
+      offset += data.length;
+      if (data.isEmpty || offset >= total) break;
+    } catch (_) {
+      break;
+    }
   }
   return all;
 }

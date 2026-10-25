@@ -3,7 +3,6 @@ import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
-import 'package:rotina_comercial/utils/time.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,6 +13,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _loading = true;
+  String? _error;
   CardsPercentageResponse? _cards;
   String _unsoldValue = '';
   List<RoutineStatusItem> _routineStatus = [];
@@ -27,30 +27,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadDashboard() async {
-    setState(() => _loading = true);
-    final today = formatStorageDate(DateTime.now());
-    try {
-      final results = await Future.wait([
-        getCardsPercentage(today),
-        getUnsoldTreatedCard(),
-        getRoutineStatusList(),
-        getTreatedByAnswers(today),
-        getUnsoldTreatedAnswers(),
-      ]);
-      setState(() {
-        _cards = results[0] as CardsPercentageResponse;
-        final unsold = results[1] as UnsoldTreatedCardResponse;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    var falhas = 0;
+    Future<T?> safe<T>(Future<T> future) async {
+      try {
+        return await future;
+      } catch (_) {
+        falhas++;
+        return null;
+      }
+    }
+
+    // Sem `date`: o BFF acumula a semana (mesmo comportamento do site).
+    // Enviar a data de domingo fazia o painel voltar vazio.
+    final results = await Future.wait([
+      safe(getCardsPercentage()),
+      safe(getUnsoldTreatedCard()),
+      safe(getRoutineStatusList()),
+      safe(getTreatedByAnswers()),
+      safe(getUnsoldTreatedAnswers()),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      if (results[0] != null) _cards = results[0] as CardsPercentageResponse;
+      final unsold = results[1] as UnsoldTreatedCardResponse?;
+      if (unsold != null) {
         _unsoldValue =
             '${unsold.unsoldTreatedItemsQuantity} (${unsold.unsoldTreatedItemsPercentage}%)';
+      }
+      if (results[2] != null) {
         _routineStatus = results[2] as List<RoutineStatusItem>;
+      }
+      if (results[3] != null) {
         _treatedByAnswers = results[3] as List<ByAnswerItem>;
+      }
+      if (results[4] != null) {
         _unsoldAnswers = results[4] as List<ByAnswerItem>;
-      });
-    } catch (e) {
-      // dashboard silencioso
-    } finally {
-      setState(() => _loading = false);
-    }
+      }
+      _error = falhas == 0
+          ? null
+          : falhas == results.length
+              ? 'Não foi possível carregar os indicadores.'
+              : 'Alguns indicadores não puderam ser carregados.';
+      _loading = false;
+    });
   }
 
   String _routineValue(RoutineStatusItem item) =>
@@ -70,6 +93,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : ListView(
                     padding: const EdgeInsets.all(12),
                     children: [
+                      if (_error != null) _errorBanner(),
                       _card(Icons.check_circle, 'Itens tratados',
                           _cards != null ? '${_cards!.treatedItemsQuantity} (${_cards!.treatedItemsPercentage}%)' : '—',
                           iconWidget: Lottie.asset(
@@ -95,7 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _sectionTitle(Icons.pie_chart, 'Tratamentos por resposta'),
                       const SizedBox(height: 8),
                       _cardColumn([
-                        const Text('Hoje',
+                        const Text('Semana',
                             style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.textMuted,
@@ -147,6 +171,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _errorBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEE2E2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFCA5A5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(_error!,
+                style: const TextStyle(
+                    color: AppColors.danger,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Open Sans')),
+          ),
+          TextButton(
+            onPressed: _loadDashboard,
+            child: const Text('Tentar novamente'),
+          ),
+        ],
       ),
     );
   }

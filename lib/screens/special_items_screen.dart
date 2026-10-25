@@ -19,6 +19,8 @@ class SpecialItemsScreen extends StatefulWidget {
 class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
   List<DepartmentGroup> _groups = [];
   bool _refreshing = false;
+  bool _loading = true;
+  String? _error;
   late bool _blocked;
   bool _showMenu = false;
   final Map<String, List<SpecialAnswer>> _answersCache = {};
@@ -50,7 +52,11 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
   }
 
   Future<void> _loadItems() async {
-    setState(() => _refreshing = true);
+    setState(() {
+      _refreshing = true;
+      _loading = _groups.isEmpty;
+      _error = null;
+    });
     try {
       final items = _itemType == 'unsold'
           ? await getUnsoldItems()
@@ -63,14 +69,25 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
             () => DepartmentGroup(
                 department: item.department, items: [])).items.add(item);
       }
+      if (!mounted) return;
       setState(() {
         _groups = map.values.toList();
         _groups.sort((a, b) => a.department.code.compareTo(b.department.code));
+        _error = null;
       });
     } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Não foi possível carregar os itens.';
+      });
       showToast('Erro ao carregar itens: $e', isError: true);
     } finally {
-      setState(() => _refreshing = false);
+      if (mounted) {
+        setState(() {
+          _refreshing = false;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -108,7 +125,8 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
       // Atualiza o item local com quem tratou e quando, pois a API não retorna
       // o treatedBy/treatedDate na lista. O badge "Tratado por" precisa disso.
       final now = DateTime.now();
-      final treatedBy = await Session.getUserName() ?? _badgeUserName;
+      var treatedBy = await Session.getUserName();
+      if (treatedBy.isEmpty) treatedBy = _badgeUserName;
       setState(() {
         for (final group in _groups) {
           final idx = group.items.indexWhere((i) => i.id == item.id);
@@ -134,6 +152,33 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
         arguments: {'itemType': target});
   }
 
+  Widget _errorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off, size: 56, color: AppColors.textHint),
+            const SizedBox(height: 12),
+            Text(_error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.textMuted,
+                    fontFamily: 'Open Sans')),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadItems,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final title =
@@ -155,11 +200,41 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                       style: const TextStyle(
                           color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Open Sans')),
                 ),
+              if (_refreshing && _groups.isNotEmpty)
+                const LinearProgressIndicator(
+                    minHeight: 2, color: AppColors.primary),
               Expanded(
-                child: RefreshIndicator(
+                child: _loading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: AppColors.primary))
+                    : _error != null
+                        ? _errorView()
+                        : RefreshIndicator(
                   color: AppColors.primary,
                   onRefresh: _loadItems,
-                  child: ListView.builder(
+                  child: _groups.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(24),
+                          children: [
+                            const SizedBox(height: 80),
+                            const Icon(Icons.inbox_outlined,
+                                size: 56, color: AppColors.textHint),
+                            const SizedBox(height: 12),
+                            Text(
+                              _itemType == 'unsold'
+                                  ? 'Nenhum item sem venda para esta loja esta semana.'
+                                  : 'Nenhum item sem histórico de venda para esta loja esta semana.',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textMuted,
+                                  fontFamily: 'Open Sans'),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
                     padding: const EdgeInsets.all(10),
                     itemCount: _groups.length,
                     itemBuilder: (context, index) {

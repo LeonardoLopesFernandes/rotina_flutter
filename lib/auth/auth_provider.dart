@@ -74,11 +74,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> setAuthenticated(String newToken) async {
-    // Preserva um token já renovado pelo BFF via Set-Cookie (interceptor),
-    // caso contrário usa o token recém-recebido.
-    final current = getAuthToken();
-    final tokenToUse =
-        (current != null && current.isNotEmpty) ? current : newToken;
+    // O token recém-capturado no login é sempre o mais confiável. Um
+    // `Set-Cookie` antigo ainda em memória (de requisição em voo) não pode
+    // sobrescrevê-lo, senão o app volta a autenticar com token expirado.
+    final tokenToUse = newToken;
     await Session.saveToken(tokenToUse);
     setAuthToken(tokenToUse);
     _token = tokenToUse;
