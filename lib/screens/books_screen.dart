@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/photo_upload_dialog.dart';
+import 'package:rotina_comercial/components/uploading_dialog.dart';
 import 'package:rotina_comercial/screens/book_treatments_screen.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
@@ -502,12 +503,34 @@ class _BooksScreenState extends State<BooksScreen> {
       ),
     );
     if (fotos == null || fotos.isEmpty || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('${fotos.length} foto(s) selecionada(s) para ${book.name}.'),
-      ),
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const UploadingDialog(),
     );
+    try {
+      await uploadBookPhotos(book.bookId, fotos, loja: store);
+      navigator.pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              '${fotos.length} foto(s) enviada(s) para ${book.name}.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      _load();
+    } catch (e) {
+      navigator.pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(uploadErrorMessage(e)),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   void _detalhes(BookStatus book) {

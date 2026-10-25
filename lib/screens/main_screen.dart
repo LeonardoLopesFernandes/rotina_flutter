@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:rotina_comercial/components/department_card.dart';
 import 'package:rotina_comercial/components/campaign_book_card.dart';
 import 'package:rotina_comercial/components/photo_upload_dialog.dart';
+import 'package:rotina_comercial/components/uploading_dialog.dart';
 import 'package:rotina_comercial/components/success_toast.dart';
 import 'package:rotina_comercial/components/treatment_badge_modal.dart';
 import 'package:rotina_comercial/hooks/departments_controller.dart';
@@ -90,12 +91,34 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
     if (fotos == null || fotos.isEmpty || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text('${fotos.length} foto(s) selecionada(s) para ${book.name}.'),
-      ),
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const UploadingDialog(),
     );
+    try {
+      await uploadBookPhotos(book.bookId, fotos, loja: store);
+      navigator.pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              '${fotos.length} foto(s) enviada(s) para ${book.name}.'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      _loadBooks();
+    } catch (e) {
+      navigator.pop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(uploadErrorMessage(e)),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    }
   }
 
   @override

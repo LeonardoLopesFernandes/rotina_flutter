@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:rotina_comercial/api/client.dart';
 import 'package:rotina_comercial/types.dart';
@@ -281,6 +282,58 @@ Future<BookTreatmentsPage> getBookTreatments(
         .toList(),
     totalCount: (res.data?['totalCount'] as num?)?.toInt() ?? 0,
   );
+}
+
+/// Envia as fotos de um book (exatamente `filesQuantity` imagens) para a loja.
+Future<void> uploadBookPhotos(
+  String bookId,
+  List<XFile> files, {
+  String? loja,
+}) async {
+  final form = FormData();
+  for (final file in files) {
+    final name = file.name.isNotEmpty ? file.name : 'foto.jpg';
+    form.files.add(MapEntry(
+      'files',
+      await MultipartFile.fromFile(
+        file.path,
+        filename: name,
+        contentType: _imageMediaType(name),
+      ),
+    ));
+  }
+  await apiClient.post<void>(
+    'rotina/books/treatments/upload-photo/$bookId',
+    queryParameters: {
+      'store': (loja == null || loja.trim().isEmpty) ? store : loja.trim(),
+    },
+    data: form,
+  );
+}
+
+DioMediaType _imageMediaType(String name) {
+  final n = name.toLowerCase();
+  if (n.endsWith('.png')) return DioMediaType('image', 'png');
+  if (n.endsWith('.webp')) return DioMediaType('image', 'webp');
+  if (n.endsWith('.heic')) return DioMediaType('image', 'heic');
+  return DioMediaType('image', 'jpeg');
+}
+
+String uploadErrorMessage(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    dynamic item = data;
+    if (data is List && data.isNotEmpty) item = data.first;
+    if (item is Map) {
+      final msg = item['errorDetails'] ?? item['error'] ?? item['message'];
+      if (msg != null && msg.toString().trim().isNotEmpty) {
+        return msg.toString();
+      }
+    }
+    final status = error.response?.statusCode;
+    if (status != null) return 'Erro $status ao enviar as fotos.';
+  }
+  return 'Não foi possível enviar as fotos.';
 }
 
 String bookTreatmentImageUrl(String treatmentId, String filename) =>
