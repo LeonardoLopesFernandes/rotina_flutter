@@ -183,7 +183,7 @@ class _MainScreenState extends State<MainScreen> {
                           curve: Curves.easeInOut,
                           alignment: Alignment.topCenter,
                           child: _ocultarTopo
-                              ? const SizedBox(width: double.infinity)
+                              ? _minimalDateCard(controller)
                               : _mainCard(controller),
                         ),
                         const SizedBox(height: 6),
@@ -455,6 +455,46 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _minimalDateCard(DepartmentsController controller) {
+    final diaSemana =
+        getDayOfWeekPt(controller.selectedDate).split('-').first;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _showDatePicker = true;
+        _calendarMonth = DateTime(controller.selectedDate.year,
+            controller.selectedDate.month, 1);
+      }),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.today, color: AppColors.primary, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '$diaSemana, ${formatDisplayDate(controller.selectedDate)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                  fontFamily: 'Open Sans',
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
