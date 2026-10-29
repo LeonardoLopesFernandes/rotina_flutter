@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/special_answers_modal.dart';
+import 'package:rotina_comercial/components/sticky_check.dart';
 import 'package:rotina_comercial/components/special_product_card.dart';
 import 'package:rotina_comercial/storage/session.dart';
 import 'package:rotina_comercial/theme.dart';
@@ -269,12 +269,7 @@ class _SpecialItemsScreenState extends State<SpecialItemsScreen> {
                                       ),
                                       const SizedBox(width: 6),
                                       if (allTreated)
-                                        Lottie.asset(
-                                          'assets/lottie/check.json',
-                                          width: 40,
-                                          height: 40,
-                                          repeat: false,
-                                        )
+                                        const StickyCheck(size: 40)
                                       else if (_blocked)
                                         Image.asset('assets/ic_block.png', width: 22, height: 22),
                                     ],

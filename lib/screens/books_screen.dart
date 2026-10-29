@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rotina_comercial/api/client.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/components/photo_upload_dialog.dart';
 import 'package:rotina_comercial/components/uploading_dialog.dart';
@@ -152,6 +153,43 @@ class _BooksScreenState extends State<BooksScreen> {
     if (book.total <= 0) return '0%';
     final pct = book.treated * 100 / book.total;
     return '${pct.toStringAsFixed(0)}% (${book.treated}/${book.total} Lojas)';
+  }
+
+  Map<String, String>? get _imageHeaders {
+    final token = getAuthToken();
+    if (token == null || token.isEmpty) return null;
+    return {
+      'Authorization': 'Bearer $token',
+      'Cookie': 'rc-newToken=$token',
+    };
+  }
+
+  void _verImagemExemplo(String url) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black,
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: const Text('Foto exemplo'),
+        ),
+        body: InteractiveViewer(
+          child: Center(
+            child: Image.network(
+              url,
+              headers: _imageHeaders,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Text(
+                'Não foi possível carregar a imagem',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   String _statusLabel(BookStatus book) {
@@ -564,11 +602,12 @@ class _BooksScreenState extends State<BooksScreen> {
   void _detalhes(BookStatus book) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => Padding(
+      builder: (_) => SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
             20, 16, 20, MediaQuery.of(context).padding.bottom + 20),
         child: Column(
@@ -605,6 +644,64 @@ class _BooksScreenState extends State<BooksScreen> {
             _linha('Data e hora de fim', _fmt(book.endDateTime)),
             if (_itemLabel(book).isNotEmpty) _linha('Item', _itemLabel(book)),
             _linha('Progresso', _progresso(book)),
+            if (book.filenames.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text('Foto exemplo',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Open Sans',
+                      color: AppColors.textPrimary)),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 110,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: book.filenames.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final url =
+                        bookExampleImageUrl(book.bookId, book.filenames[i]);
+                    return GestureDetector(
+                      onTap: () => _verImagemExemplo(url),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          url,
+                          headers: _imageHeaders,
+                          width: 160,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : Container(
+                                      width: 160,
+                                      height: 110,
+                                      color: const Color(0xFFF2F2F2),
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      ),
+                                    ),
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 160,
+                            height: 110,
+                            color: const Color(0xFFF2F2F2),
+                            child: const Icon(Icons.broken_image,
+                                color: AppColors.textHint),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,

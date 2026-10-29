@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:rotina_comercial/components/product_card.dart';
+import 'package:rotina_comercial/components/sticky_check.dart';
 import 'package:rotina_comercial/theme.dart';
 import 'package:rotina_comercial/types.dart';
 
@@ -56,12 +56,7 @@ class DepartmentCard extends StatelessWidget {
                 ),
                 if (allTreated) ...[
                   const SizedBox(width: 6),
-                  Lottie.asset(
-                    'assets/lottie/check.json',
-                    width: 30,
-                    height: 30,
-                    repeat: false,
-                  ),
+                  const StickyCheck(size: 30),
                 ] else if (blocked) ...[
                   const SizedBox(width: 6),
                   Image.asset('assets/ic_block.png', width: 20, height: 20),

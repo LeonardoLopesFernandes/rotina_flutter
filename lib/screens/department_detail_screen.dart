@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:rotina_comercial/api/endpoints.dart';
 import 'package:rotina_comercial/auth/auth_provider.dart';
 import 'package:rotina_comercial/components/checklist_modal.dart';
 import 'package:rotina_comercial/components/success_toast.dart';
 import 'package:rotina_comercial/components/product_card.dart';
+import 'package:rotina_comercial/components/sticky_check.dart';
 import 'package:rotina_comercial/components/treatment_badge_modal.dart';
 import 'package:rotina_comercial/storage/session.dart';
 import 'package:rotina_comercial/theme.dart';
@@ -187,12 +187,7 @@ class _DepartmentDetailScreenState extends State<DepartmentDetailScreen> {
                   ),
                   if (allTreated) ...[
                     const SizedBox(width: 8),
-                    Lottie.asset(
-                      'assets/lottie/check.json',
-                      width: 44,
-                      height: 44,
-                      repeat: false,
-                    ),
+                    const StickyCheck(size: 44),
                   ],
                 ],
               ),

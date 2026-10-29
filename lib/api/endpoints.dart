@@ -384,3 +384,7 @@ String uploadErrorMessage(Object error) {
 
 String bookTreatmentImageUrl(String treatmentId, String filename) =>
     '${baseUrl}rotina/books/store-treatment/$treatmentId/image?filename=${Uri.encodeQueryComponent(filename)}';
+
+/// Foto exemplo do book (campanha), usada como referência para a loja.
+String bookExampleImageUrl(String bookId, String filename) =>
+    '${baseUrl}rotina/books/example-image/$bookId?filename=${Uri.encodeQueryComponent(filename)}';
