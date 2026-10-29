@@ -136,8 +136,22 @@ class _BooksScreenState extends State<BooksScreen> {
   String _fmt(String raw) {
     final d = DateTime.tryParse(raw);
     if (d == null) return raw;
+    final l = d.toLocal();
     final p = (int n) => n.toString().padLeft(2, '0');
-    return '${p(d.day)}/${p(d.month)}/${d.year} ${p(d.hour)}:${p(d.minute)}';
+    return '${p(l.day)}/${p(l.month)}/${l.year} ${p(l.hour)}:${p(l.minute)}';
+  }
+
+  String _itemLabel(BookStatus book) {
+    if (book.type == 'management') return 'Administrativo';
+    final desc = book.item?['description']?.toString() ?? '';
+    if (book.type == 'item-family') return '[Família] $desc';
+    return desc;
+  }
+
+  String _progresso(BookStatus book) {
+    if (book.total <= 0) return '0%';
+    final pct = book.treated * 100 / book.total;
+    return '${pct.toStringAsFixed(0)}% (${book.treated}/${book.total} Lojas)';
   }
 
   String _statusLabel(BookStatus book) {
@@ -585,14 +599,12 @@ class _BooksScreenState extends State<BooksScreen> {
                       color: AppColors.textSecondary,
                       fontFamily: 'Open Sans')),
             const SizedBox(height: 12),
-            _linha('Início', _fmt(book.startDateTime)),
-            _linha('Fim', _fmt(book.endDateTime)),
-            _linha('Fotos necessárias', '${book.filesQuantity}'),
-            if (book.filenames.isNotEmpty)
-              _linha('Arquivos', '${book.filenames.length}'),
-            if (book.createdBy.isNotEmpty) _linha('Por', book.createdBy),
-            if (book.total > 0)
-              _linha('Lojas tratadas', '${book.treated}/${book.total}'),
+            if (book.createdBy.isNotEmpty)
+              _linha('Criado por', book.createdBy),
+            _linha('Data e hora de início', _fmt(book.startDateTime)),
+            _linha('Data e hora de fim', _fmt(book.endDateTime)),
+            if (_itemLabel(book).isNotEmpty) _linha('Item', _itemLabel(book)),
+            _linha('Progresso', _progresso(book)),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
