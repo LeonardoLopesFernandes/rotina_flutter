@@ -371,11 +371,11 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
                                 padding: const EdgeInsets.fromLTRB(
                                     12, 0, 12, 12),
                                 gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: _gridColumns(context),
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
-                                  childAspectRatio: 0.82,
+                                  childAspectRatio: 1,
                                 ),
                                 itemCount: photos.length,
                                 itemBuilder: (_, i) =>
@@ -426,13 +426,6 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         ],
       ),
     );
-  }
-
-  int _gridColumns(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    if (w >= 900) return 4;
-    if (w >= 600) return 3;
-    return 2;
   }
 
   Widget _fotoGrid(_GridPhoto foto) {
