@@ -83,6 +83,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _anexarFotos(BookStatus book) async {
+    if (!book.podeEnviarFotos) return;
     final fotos = await showDialog<List<XFile>>(
       context: context,
       builder: (_) => PhotoUploadDialog(

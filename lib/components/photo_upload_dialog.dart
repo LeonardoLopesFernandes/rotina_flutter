@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rotina_comercial/theme.dart';
 
 /// Diálogo de anexar fotos do book (layout largo para visualizar as imagens).
 class PhotoUploadDialog extends StatefulWidget {
@@ -27,9 +28,7 @@ class _PhotoUploadDialogState extends State<PhotoUploadDialog> {
     final restante = _requerido - _fotos.length;
     if (restante <= 0) return;
     final picked = await _picker.pickMultiImage(
-      maxWidth: 1280,
-      maxHeight: 1280,
-      imageQuality: 70,
+      imageQuality: 100,
       limit: restante,
     );
     if (picked.isEmpty || !mounted) return;
@@ -185,7 +184,8 @@ class _PhotoUploadDialogState extends State<PhotoUploadDialog> {
                     onPressed:
                         completo ? () => Navigator.of(context).pop(_fotos) : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF708A),
+                      backgroundColor:
+                          completo ? AppColors.primary : Colors.grey.shade300,
                       disabledBackgroundColor: Colors.grey.shade300,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(

@@ -213,31 +213,52 @@ Future<List<BookStatus>> getBooks({String? loja}) async {
       .toList();
 }
 
-/// Books da loja (histórico), percorrendo as páginas (10/página no site).
-/// Limita a 10 páginas e devolve o que já carregou em caso de erro/timeout,
-/// para a tela nunca ficar travada esperando o histórico inteiro.
+/// Books da loja (histórico completo), percorrendo todas as páginas.
+/// Devolve o que já carregou em caso de erro/timeout para a tela não travar.
 Future<List<BookStatus>> getAllBooks({String? loja}) async {
   final filtro = loja?.trim() ?? '';
+  final todos = await _fetchAllBooks(filtro);
+  // Alguns perfis não podem consultar o histórico global; nesse caso tenta
+  // novamente apenas com a loja do usuário antes de exibir só os pendentes.
+  if (todos.isEmpty && filtro.isEmpty) {
+    return _fetchAllBooks(store);
+  }
+  return todos;
+}
+
+Future<List<BookStatus>> _fetchAllBooks(String filtro) async {
   final all = <BookStatus>[];
+  final vistos = <String>{};
   var offset = 0;
-  for (var i = 0; i < 10; i++) {
+  // Guarda apenas contra loop infinito em uma API defeituosa; o limite real
+  // é o totalCount/lista vazia devolvida pelo servidor.
+  for (var i = 0; i < 500; i++) {
     try {
       final res = await apiClient.get<Map<String, dynamic>>(
         'rotina/books/paginated',
         queryParameters: {
-          'limit': 10,
+          'limit': 100,
           'offset': offset,
           if (filtro.isNotEmpty) 'store': filtro,
         },
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 20));
       final data = (res.data?['data'] as List?) ?? [];
-      all.addAll(data
+      final page = data
           .whereType<Map<String, dynamic>>()
           .map(BookStatus.fromJson)
-          .toList());
+          .toList();
+      var novos = 0;
+      for (final b in page) {
+        if (vistos.add(b.bookId)) {
+          all.add(b);
+          novos++;
+        }
+      }
       final total = (res.data?['totalCount'] as num?)?.toInt() ?? 0;
       offset += data.length;
-      if (data.isEmpty || offset >= total) break;
+      if (data.isEmpty || page.isEmpty || offset >= total) break;
+      // Protege contra uma API que ignore o offset e repita a mesma página.
+      if (novos == 0) break;
     } catch (_) {
       break;
     }
@@ -284,12 +305,17 @@ Future<BookTreatmentsPage> getBookTreatments(
   );
   final data = res.data?['data'];
   final raw = (data is Map ? data['treatments'] : null) as List? ?? [];
+  final bookJson =
+      (data is Map ? data['book'] : null) ?? res.data?['book'];
   return BookTreatmentsPage(
     treatments: raw
         .whereType<Map<String, dynamic>>()
         .map(BookTreatment.fromJson)
         .toList(),
     totalCount: (res.data?['totalCount'] as num?)?.toInt() ?? 0,
+    book: bookJson is Map<String, dynamic>
+        ? BookStatus.fromJson(bookJson)
+        : null,
   );
 }
 
@@ -324,12 +350,15 @@ Future<void> uploadBookPhotos(
   );
 }
 
+const int _maxUploadBytes = 900 * 1024;
+const int _maxUploadDimension = 4096;
+
 Future<({Uint8List bytes, bool converted})> _prepareImageBytes(
     XFile file) async {
   final raw = await file.readAsBytes();
-  // Mantém a foto original quando já está leve; comprime só o que pode
-  // estourar o limite do servidor (erro 413).
-  if (raw.lengthInBytes <= 900 * 1024) {
+  // Mantém a foto original quando já está leve. Só comprime o necessário
+  // para caber no limite aceito pelo servidor (erro 413).
+  if (raw.lengthInBytes <= _maxUploadBytes) {
     return (bytes: raw, converted: false);
   }
   return (bytes: await compute(_compressImage, raw), converted: true);
@@ -344,17 +373,49 @@ String _jpegName(String name) {
 Uint8List _compressImage(Uint8List raw) {
   final decoded = img.decodeImage(raw);
   if (decoded == null) return raw;
-  var image = decoded;
-  const maxDim = 1280;
-  if (image.width > maxDim || image.height > maxDim) {
-    image = img.copyResize(
-      image,
-      width: image.width >= image.height ? maxDim : null,
-      height: image.height > image.width ? maxDim : null,
-      interpolation: img.Interpolation.linear,
-    );
+
+  var base = decoded;
+  if (base.width > _maxUploadDimension || base.height > _maxUploadDimension) {
+    base = _resizeToMax(base, _maxUploadDimension);
   }
-  return Uint8List.fromList(img.encodeJpg(image, quality: 72));
+
+  // Primeiro tenta manter o tamanho original com a maior qualidade possível.
+  // Se ainda passar do limite, reduz a resolução gradualmente.
+  const dimensoes = <int?>[
+    null,
+    2400,
+    2000,
+    1800,
+    1600,
+    1400,
+    1280,
+    1024,
+    900,
+    800
+  ];
+  const qualidades = [95, 92, 90, 88, 85, 82, 80, 78, 75, 72, 70, 65, 60, 55];
+
+  for (final dimensao in dimensoes) {
+    final candidata =
+        dimensao == null ? base : _resizeToMax(base, dimensao);
+    for (final qualidade in qualidades) {
+      final bytes =
+          Uint8List.fromList(img.encodeJpg(candidata, quality: qualidade));
+      if (bytes.lengthInBytes <= _maxUploadBytes) return bytes;
+    }
+  }
+  return Uint8List.fromList(
+      img.encodeJpg(_resizeToMax(base, 800), quality: 50));
+}
+
+img.Image _resizeToMax(img.Image source, int maxDim) {
+  if (source.width <= maxDim && source.height <= maxDim) return source;
+  return img.copyResize(
+    source,
+    width: source.width >= source.height ? maxDim : null,
+    height: source.height > source.width ? maxDim : null,
+    interpolation: img.Interpolation.linear,
+  );
 }
 
 DioMediaType _imageMediaType(String name) {

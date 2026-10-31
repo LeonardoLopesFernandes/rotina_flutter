@@ -65,24 +65,21 @@ class _BooksScreenState extends State<BooksScreen> {
       }
     }
 
-    // Dispara as duas buscas em paralelo: os pendentes aparecem assim que
-    // chegam, sem esperar o histórico completo (que pode ser lento).
-    final pendentesFuture =
-        safe(getBooks(loja: loja).timeout(const Duration(seconds: 15)));
-    final todosFuture = safe(getAllBooks(loja: loja));
-
-    pendentesFuture.then((pendentes) {
-      if (!mounted || pendentes.isEmpty) return;
-      setState(() {
-        _books = pendentes;
-        _pendingIds = pendentes.map((b) => b.bookId).toSet();
-        _loading = false;
-      });
-    });
-
-    final pendentes = await pendentesFuture;
-    var books = await todosFuture;
-    if (books.isEmpty) books = pendentes;
+    // Carrega pendentes e histórico em paralelo e só monta a lista quando os
+    // dois terminam, para não exibir apenas os pendentes por alguns segundos.
+    final results = await Future.wait([
+      safe(getBooks(loja: loja).timeout(const Duration(seconds: 20))),
+      safe(getAllBooks(loja: loja)),
+    ]);
+    final pendentes = results[0];
+    final historico = results[1];
+    final porId = <String, BookStatus>{
+      for (final b in historico) b.bookId: b,
+    };
+    for (final p in pendentes) {
+      porId[p.bookId] = p;
+    }
+    final books = porId.values.toList();
     if (!mounted) return;
     if (books.isEmpty) {
       setState(() {
@@ -91,14 +88,22 @@ class _BooksScreenState extends State<BooksScreen> {
       });
       return;
     }
+    final pendingIds = {
+      ...pendentes.map((b) => b.bookId),
+      for (final b in books)
+        if (b.pendente) b.bookId,
+    };
     books.sort((a, b) {
+      final pa = pendingIds.contains(a.bookId);
+      final pb = pendingIds.contains(b.bookId);
+      if (pa != pb) return pa ? -1 : 1;
       final da = DateTime.tryParse(a.startDateTime) ?? DateTime(2000);
       final db = DateTime.tryParse(b.startDateTime) ?? DateTime(2000);
       return db.compareTo(da);
     });
     setState(() {
       _books = books;
-      _pendingIds = pendentes.map((b) => b.bookId).toSet();
+      _pendingIds = pendingIds;
       _loading = false;
       _error = null;
     });
@@ -164,38 +169,9 @@ class _BooksScreenState extends State<BooksScreen> {
     };
   }
 
-  void _verImagemExemplo(String url) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black,
-      builder: (_) => Scaffold(
-        backgroundColor: Colors.black,
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          title: const Text('Foto exemplo'),
-        ),
-        body: InteractiveViewer(
-          child: Center(
-            child: Image.network(
-              url,
-              headers: _imageHeaders,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Text(
-                'Não foi possível carregar a imagem',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   String _statusLabel(BookStatus book) {
+    if (book.encerrado) return 'ENCERRADO';
     if (_pendingIds.contains(book.bookId)) return 'PENDENTE';
-    final end = DateTime.tryParse(book.endDateTime);
-    if (end != null && end.isBefore(DateTime.now())) return 'ENCERRADO';
     return 'DISPONÍVEL';
   }
 
@@ -359,9 +335,7 @@ class _BooksScreenState extends State<BooksScreen> {
                                     padding: const EdgeInsets.all(40),
                                     child: Center(
                                       child: Text(
-                                        _query.isEmpty
-                                            ? 'Nenhum book pendente'
-                                            : 'Nenhum book encontrado',
+                                        'Nenhum book encontrado',
                                         style: const TextStyle(
                                             color: AppColors.textHint,
                                             fontFamily: 'Open Sans'),
@@ -476,19 +450,20 @@ class _BooksScreenState extends State<BooksScreen> {
                   ),
                   Row(
                     children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                            minWidth: 32, minHeight: 32),
-                        icon: SvgPicture.asset(
-                          'assets/icons/books_add_image.svg',
-                          width: 18,
-                          height: 19,
-                          colorFilter: const ColorFilter.mode(
-                              AppColors.primary, BlendMode.srcIn),
+                      if (book.podeEnviarFotos)
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                              minWidth: 32, minHeight: 32),
+                          icon: SvgPicture.asset(
+                            'assets/icons/books_add_image.svg',
+                            width: 18,
+                            height: 19,
+                            colorFilter: const ColorFilter.mode(
+                                AppColors.primary, BlendMode.srcIn),
+                          ),
+                          onPressed: () => _anexarFotos(book),
                         ),
-                        onPressed: () => _anexarFotos(book),
-                      ),
                       const Text('Ver detalhes',
                           style: TextStyle(
                               fontSize: 11,
@@ -561,6 +536,7 @@ class _BooksScreenState extends State<BooksScreen> {
   }
 
   Future<void> _anexarFotos(BookStatus book) async {
+    if (!book.podeEnviarFotos) return;
     final fotos = await showDialog<List<XFile>>(
       context: context,
       builder: (_) => PhotoUploadDialog(
@@ -663,7 +639,10 @@ class _BooksScreenState extends State<BooksScreen> {
                     final url =
                         bookExampleImageUrl(book.bookId, book.filenames[i]);
                     return GestureDetector(
-                      onTap: () => _verImagemExemplo(url),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _verFotos(book);
+                      },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -733,37 +712,39 @@ class _BooksScreenState extends State<BooksScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _anexarFotos(book);
-                },
-                icon: SvgPicture.asset(
-                  'assets/icons/books_add_image.svg',
-                  width: 18,
-                  height: 19,
-                  colorFilter: const ColorFilter.mode(
-                      Colors.white, BlendMode.srcIn),
-                ),
-                label: const Text(
-                  'ANEXAR IMAGENS',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Open Sans'),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            if (book.podeEnviarFotos) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _anexarFotos(book);
+                  },
+                  icon: SvgPicture.asset(
+                    'assets/icons/books_add_image.svg',
+                    width: 18,
+                    height: 19,
+                    colorFilter: const ColorFilter.mode(
+                        Colors.white, BlendMode.srcIn),
+                  ),
+                  label: const Text(
+                    'ANEXAR IMAGENS',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Open Sans'),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

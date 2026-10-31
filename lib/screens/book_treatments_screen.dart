@@ -26,10 +26,12 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   List<BookTreatment> _treatments = [];
   int _total = 0;
   int _offset = 0;
+  late BookStatus _book;
 
   @override
   void initState() {
     super.initState();
+    _book = widget.book;
     _carregarFiltros();
     _load(reset: true);
   }
@@ -101,6 +103,9 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         setState(() {
           _treatments = page.treatments;
           _total = page.totalCount;
+          if (page.book != null && page.book!.filenames.isNotEmpty) {
+            _book = page.book!;
+          }
           _loading = false;
         });
       }
@@ -114,42 +119,6 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     }
   }
 
-  String _statusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'notexecuted':
-        return 'Não enviado';
-      case 'processing':
-        return 'Em análise';
-      case 'executed':
-        return 'Enviado';
-      case 'approved':
-        return 'Aprovado';
-      case 'notapproved':
-      case 'not_approved':
-        return 'Não aprovado';
-      default:
-        return status.isEmpty ? '—' : status;
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'notexecuted':
-        return Colors.amber[700]!;
-      case 'processing':
-        return const Color(0xFF1565C0);
-      case 'executed':
-        return const Color(0xFF2E7D32);
-      case 'approved':
-        return const Color(0xFF2E7D32);
-      case 'notapproved':
-      case 'not_approved':
-        return const Color(0xFFC62828);
-      default:
-        return Colors.grey;
-    }
-  }
-
   int get _totalPages {
     if (_total == 0) return 1;
     return (_total / _limit).ceil();
@@ -157,7 +126,31 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   int get _page => (_offset / _limit).floor() + 1;
 
-  void _verImagem(String url, String store) {
+  List<_GridPhoto> get _gridPhotos {
+    final items = <_GridPhoto>[];
+    // A foto exemplo do book abre sempre como a primeira do grid.
+    if (_offset == 0) {
+      for (final filename in _book.filenames) {
+        items.add(_GridPhoto(
+          url: bookExampleImageUrl(_book.bookId, filename),
+          label: 'EXEMPLO',
+          exemplo: true,
+        ));
+      }
+    }
+    for (final t in _treatments) {
+      for (final filename in t.filenames) {
+        items.add(_GridPhoto(
+          url: bookTreatmentImageUrl(t.id, filename),
+          label: t.store.isEmpty ? '—' : t.store,
+          exemplo: false,
+        ));
+      }
+    }
+    return items;
+  }
+
+  void _verImagem(String url, String title) {
     showDialog<void>(
       context: context,
       barrierColor: Colors.black,
@@ -166,7 +159,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
-          title: Text('Foto da loja $store'),
+          title: Text(title),
         ),
         body: InteractiveViewer(
           child: Center(
@@ -187,6 +180,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final photos = _gridPhotos;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -359,13 +353,13 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
                     : RefreshIndicator(
                         color: AppColors.primary,
                         onRefresh: () => _load(),
-                        child: _treatments.isEmpty
+                        child: photos.isEmpty
                             ? ListView(
                                 children: [
                                   const Padding(
                                     padding: EdgeInsets.all(40),
                                     child: Center(
-                                      child: Text('Nenhuma loja encontrada',
+                                      child: Text('Nenhuma foto encontrada',
                                           style: TextStyle(
                                               color: AppColors.textHint,
                                               fontFamily: 'Open Sans')),
@@ -373,12 +367,19 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
                                   ),
                                 ],
                               )
-                            : ListView.builder(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                itemCount: _treatments.length,
+                            : GridView.builder(
+                                padding: const EdgeInsets.fromLTRB(
+                                    12, 0, 12, 12),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: _gridColumns(context),
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  childAspectRatio: 0.82,
+                                ),
+                                itemCount: photos.length,
                                 itemBuilder: (_, i) =>
-                                    _card(_treatments[i]),
+                                    _fotoGrid(photos[i]),
                               ),
                       ),
           ),
@@ -427,122 +428,95 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     );
   }
 
-  Widget _card(BookTreatment t) {
-    final statusColor = _statusColor(t.status);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  int _gridColumns(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    if (w >= 900) return 4;
+    if (w >= 600) return 3;
+    return 2;
+  }
+
+  Widget _fotoGrid(_GridPhoto foto) {
+    return GestureDetector(
+      onTap: () => _verImagem(
+        foto.url,
+        foto.exemplo ? 'Foto exemplo' : 'Foto da loja ${foto.label}',
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.storefront,
-                    color: AppColors.primary, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Loja ${t.store}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        fontFamily: 'Open Sans'),
+            Image.network(
+              foto.url,
+              headers: _headers,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return Container(
+                  color: const Color(0xFFF0F0F0),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: AppColors.primary),
+                    ),
                   ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor.withOpacity(0.4)),
-                  ),
-                  child: Text(
-                    _statusLabel(t.status),
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: statusColor,
-                        fontFamily: 'Open Sans'),
-                  ),
-                ),
-              ],
+                );
+              },
+              errorBuilder: (_, __, ___) => Container(
+                color: const Color(0xFFF0F0F0),
+                child: const Icon(Icons.broken_image,
+                    color: AppColors.textHint, size: 32),
+              ),
             ),
-            const SizedBox(height: 10),
-            if (!t.temFotos)
-              const Text(
-                'Sem fotos anexadas',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textMuted,
-                    fontFamily: 'Open Sans'),
-              )
-            else ...[
-              Text(
-                '${t.filenames.length} foto(s)',
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                    fontFamily: 'Open Sans'),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 96,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: t.filenames.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) {
-                    final url =
-                        bookTreatmentImageUrl(t.id, t.filenames[i]);
-                    return GestureDetector(
-                      onTap: () => _verImagem(url, t.store),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          url,
-                          headers: _headers,
-                          width: 96,
-                          height: 96,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              width: 96,
-                              height: 96,
-                              color: const Color(0xFFF0F0F0),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary),
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 96,
-                            height: 96,
-                            color: const Color(0xFFF0F0F0),
-                            child: const Icon(Icons.broken_image,
-                                color: AppColors.textHint),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
+            Positioned(
+              top: 8,
+              left: 8,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: foto.exemplo
+                      ? Colors.black.withOpacity(0.78)
+                      : AppColors.primary,
+                  borderRadius: BorderRadius.circular(6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  foto.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Open Sans',
+                  ),
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+class _GridPhoto {
+  final String url;
+  final String label;
+  final bool exemplo;
+
+  const _GridPhoto({
+    required this.url,
+    required this.label,
+    required this.exemplo,
+  });
 }

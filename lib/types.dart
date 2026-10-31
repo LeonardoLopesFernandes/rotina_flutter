@@ -628,6 +628,25 @@ class BookStatus {
     final s = status.toLowerCase();
     return s == 'notexecuted' || s == 'pending';
   }
+
+  /// Book fora do prazo: não deve mais aceitar novas fotos.
+  bool get encerrado {
+    final fim = DateTime.tryParse(endDateTime);
+    return fim != null && fim.isBefore(DateTime.now());
+  }
+
+  /// O tratamento já possui fotos enviadas para esta loja.
+  bool get jaEnviouFotos {
+    final raw = treatment['numberOfPhotosSent'];
+    final enviadas = raw is num
+        ? raw.toInt()
+        : int.tryParse(raw?.toString() ?? '') ?? 0;
+    final arquivos = treatment['filenames'];
+    return enviadas > 0 || (arquivos is List && arquivos.isNotEmpty);
+  }
+
+  /// Só permite anexar fotos enquanto pendente, dentro do prazo e sem envio.
+  bool get podeEnviarFotos => pendente && !encerrado && !jaEnviouFotos;
 }
 
 class BookTreatment {
@@ -666,10 +685,12 @@ class BookTreatment {
 class BookTreatmentsPage {
   final List<BookTreatment> treatments;
   final int totalCount;
+  final BookStatus? book;
 
   const BookTreatmentsPage({
     required this.treatments,
     required this.totalCount,
+    this.book,
   });
 }
 

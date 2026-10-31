@@ -233,20 +233,21 @@ class CampaignBookCard extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            visualDensity: VisualDensity.compact,
-                            constraints: const BoxConstraints(
-                                minWidth: 34, minHeight: 34),
-                            icon: SvgPicture.asset(
-                              'assets/icons/books_add_image.svg',
-                              width: 20,
-                              height: 21,
-                              colorFilter: const ColorFilter.mode(
-                                  AppColors.primary, BlendMode.srcIn),
+                          if (book.podeEnviarFotos && onAddPhoto != null)
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              constraints: const BoxConstraints(
+                                  minWidth: 34, minHeight: 34),
+                              icon: SvgPicture.asset(
+                                'assets/icons/books_add_image.svg',
+                                width: 20,
+                                height: 21,
+                                colorFilter: const ColorFilter.mode(
+                                    AppColors.primary, BlendMode.srcIn),
+                              ),
+                              onPressed: onAddPhoto,
                             ),
-                            onPressed: onAddPhoto,
-                          ),
                           const SizedBox(width: 4),
                           IconButton(
                             padding: EdgeInsets.zero,
