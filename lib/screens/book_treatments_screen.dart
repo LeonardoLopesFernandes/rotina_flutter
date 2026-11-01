@@ -64,7 +64,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
             const TextStyle(fontSize: 13, color: _hint, fontFamily: 'Open Sans'),
         isDense: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+            const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -375,13 +375,17 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
       ),
     );
 
-    return Row(
+    return Column(
       children: [
-        Expanded(child: regiao),
-        const SizedBox(width: 8),
-        Expanded(child: distrito),
-        const SizedBox(width: 8),
-        Expanded(child: loja),
+        Row(
+          children: [
+            Expanded(child: regiao),
+            const SizedBox(width: 6),
+            Expanded(child: distrito),
+          ],
+        ),
+        const SizedBox(height: 6),
+        loja,
       ],
     );
   }
