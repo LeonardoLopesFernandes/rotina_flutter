@@ -21,6 +21,9 @@ class BooksScreen extends StatefulWidget {
 
 class _BooksScreenState extends State<BooksScreen> {
   static const int _perPage = 10;
+  static List<BookStatus>? _cacheBooks;
+  static Set<String>? _cachePendingIds;
+
   final _searchController = TextEditingController();
   final _lojaController = TextEditingController();
   bool _loading = true;
@@ -33,6 +36,12 @@ class _BooksScreenState extends State<BooksScreen> {
   @override
   void initState() {
     super.initState();
+    final cache = _cacheBooks;
+    if (cache != null) {
+      _books = cache;
+      _pendingIds = {...?_cachePendingIds};
+      _loading = false;
+    }
     _load();
   }
 
@@ -50,8 +59,8 @@ class _BooksScreenState extends State<BooksScreen> {
 
   Future<void> _load() async {
     setState(() {
-      _loading = true;
       _error = null;
+      if (_books.isEmpty) _loading = true;
     });
     final loja = _lojaController.text.trim();
     var falhou = false;
@@ -83,7 +92,9 @@ class _BooksScreenState extends State<BooksScreen> {
     if (!mounted) return;
     if (books.isEmpty) {
       setState(() {
-        _error = falhou ? 'Não foi possível carregar os books.' : null;
+        _error = _books.isEmpty && falhou
+            ? 'Não foi possível carregar os books.'
+            : null;
         _loading = false;
       });
       return;
@@ -101,6 +112,10 @@ class _BooksScreenState extends State<BooksScreen> {
       final db = DateTime.tryParse(b.startDateTime) ?? DateTime(2000);
       return db.compareTo(da);
     });
+    if (loja.isEmpty) {
+      _cacheBooks = List<BookStatus>.unmodifiable(books);
+      _cachePendingIds = Set<String>.unmodifiable(pendingIds);
+    }
     setState(() {
       _books = books;
       _pendingIds = pendingIds;

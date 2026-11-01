@@ -226,42 +226,66 @@ Future<List<BookStatus>> getAllBooks({String? loja}) async {
   return todos;
 }
 
-Future<List<BookStatus>> _fetchAllBooks(String filtro) async {
-  final all = <BookStatus>[];
-  final vistos = <String>{};
-  var offset = 0;
-  // Guarda apenas contra loop infinito em uma API defeituosa; o limite real
-  // é o totalCount/lista vazia devolvida pelo servidor.
-  for (var i = 0; i < 500; i++) {
-    try {
-      final res = await apiClient.get<Map<String, dynamic>>(
-        'rotina/books/paginated',
-        queryParameters: {
-          'limit': 100,
-          'offset': offset,
-          if (filtro.isNotEmpty) 'store': filtro,
-        },
-      ).timeout(const Duration(seconds: 20));
-      final data = (res.data?['data'] as List?) ?? [];
-      final page = data
+Future<({List<BookStatus> books, int total})> _fetchBooksPage(
+  String filtro,
+  int offset,
+) async {
+  try {
+    final res = await apiClient.get<Map<String, dynamic>>(
+      'rotina/books/paginated',
+      queryParameters: {
+        'limit': 100,
+        'offset': offset,
+        if (filtro.isNotEmpty) 'store': filtro,
+      },
+    ).timeout(const Duration(seconds: 20));
+    final data = (res.data?['data'] as List?) ?? [];
+    return (
+      books: data
           .whereType<Map<String, dynamic>>()
           .map(BookStatus.fromJson)
-          .toList();
-      var novos = 0;
-      for (final b in page) {
-        if (vistos.add(b.bookId)) {
-          all.add(b);
-          novos++;
-        }
-      }
-      final total = (res.data?['totalCount'] as num?)?.toInt() ?? 0;
-      offset += data.length;
-      if (data.isEmpty || page.isEmpty || offset >= total) break;
-      // Protege contra uma API que ignore o offset e repita a mesma página.
-      if (novos == 0) break;
-    } catch (_) {
-      break;
+          .toList(),
+      total: (res.data?['totalCount'] as num?)?.toInt() ?? 0,
+    );
+  } catch (_) {
+    return (books: const <BookStatus>[], total: 0);
+  }
+}
+
+Future<List<BookStatus>> _fetchAllBooks(String filtro) async {
+  final first = await _fetchBooksPage(filtro, 0);
+  final all = <BookStatus>[];
+  final vistos = <String>{};
+
+  void adicionar(Iterable<BookStatus> livros) {
+    for (final b in livros) {
+      if (vistos.add(b.bookId)) all.add(b);
     }
+  }
+
+  adicionar(first.books);
+  if (first.books.isEmpty) return all;
+
+  final pageSize = first.books.length;
+  final totalPages = first.total > pageSize
+      ? (first.total / pageSize).ceil().clamp(1, 100).toInt()
+      : 1;
+
+  // As páginas restantes são buscadas em pequenos lotes paralelos. Antes elas
+  // eram sequenciais, o que deixava a tela de Books lenta com muitos books.
+  const lote = 8;
+  var pagina = 1;
+  while (pagina < totalPages) {
+    final fim = pagina + lote < totalPages ? pagina + lote : totalPages;
+    final futures = <Future<({List<BookStatus> books, int total})>>[];
+    for (var p = pagina; p < fim; p++) {
+      futures.add(_fetchBooksPage(filtro, p * pageSize));
+    }
+    final paginas = await Future.wait(futures);
+    for (final p in paginas) {
+      adicionar(p.books);
+    }
+    pagina = fim;
   }
   return all;
 }
