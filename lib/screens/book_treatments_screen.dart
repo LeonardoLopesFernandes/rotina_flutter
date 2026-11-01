@@ -64,7 +64,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
             const TextStyle(fontSize: 13, color: _hint, fontFamily: 'Open Sans'),
         isDense: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -318,132 +318,140 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   }
 
   Widget _filtros() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final regiao = DropdownButtonFormField<String>(
-          value: _region ?? '',
-          isExpanded: true,
-          decoration: _filtroDecoration('Região'),
-          items: [
-            const DropdownMenuItem(value: '', child: Text('Todas as regiões')),
-            ..._regions.map(
-              (r) => DropdownMenuItem(value: r, child: Text(r)),
-            ),
-          ],
-          onChanged: (v) {
-            setState(() {
-              _region = (v == null || v.isEmpty) ? null : v;
-              _district = null;
-            });
-            _aplicar();
-          },
-        );
+    final regiao = DropdownButtonFormField<String>(
+      value: _region ?? '',
+      isExpanded: true,
+      decoration: _filtroDecoration('Região'),
+      items: [
+        const DropdownMenuItem(value: '', child: Text('Todas as regiões')),
+        ..._regions.map(
+          (r) => DropdownMenuItem(value: r, child: Text(r)),
+        ),
+      ],
+      onChanged: (v) {
+        setState(() {
+          _region = (v == null || v.isEmpty) ? null : v;
+          _district = null;
+        });
+        _aplicar();
+      },
+    );
 
-        final distrito = DropdownButtonFormField<String>(
-          value: _district ?? '',
-          isExpanded: true,
-          decoration: _filtroDecoration('Distrito'),
-          items: [
-            const DropdownMenuItem(
-                value: '', child: Text('Todos os distritos')),
-            ..._distritosVisiveis.map(
-              (d) => DropdownMenuItem(
-                value: d.code,
-                child: Text(
-                  '${d.code} - ${d.name}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
-          onChanged: (v) {
-            setState(() => _district = (v == null || v.isEmpty) ? null : v);
-            _aplicar();
-          },
-        );
-
-        final loja = TextField(
-          controller: _storeController,
-          onSubmitted: (_) => _aplicar(),
-          style: const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
-          decoration: _filtroDecoration('Pesquisar por loja').copyWith(
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.search, size: 18, color: _hint),
-              onPressed: _aplicar,
+    final distrito = DropdownButtonFormField<String>(
+      value: _district ?? '',
+      isExpanded: true,
+      decoration: _filtroDecoration('Distrito'),
+      items: [
+        const DropdownMenuItem(value: '', child: Text('Todos os distritos')),
+        ..._distritosVisiveis.map(
+          (d) => DropdownMenuItem(
+            value: d.code,
+            child: Text(
+              '${d.code} - ${d.name}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        );
-
-        if (constraints.maxWidth > 600) {
-          return Row(
-            children: [
-              Expanded(child: regiao),
-              const SizedBox(width: 12),
-              Expanded(child: distrito),
-              const SizedBox(width: 12),
-              Expanded(child: loja),
-            ],
-          );
-        }
-        return Column(
-          children: [
-            regiao,
-            const SizedBox(height: 10),
-            distrito,
-            const SizedBox(height: 10),
-            loja,
-          ],
-        );
+        ),
+      ],
+      onChanged: (v) {
+        setState(() => _district = (v == null || v.isEmpty) ? null : v);
+        _aplicar();
       },
+    );
+
+    final loja = TextField(
+      controller: _storeController,
+      onSubmitted: (_) => _aplicar(),
+      style: const TextStyle(fontSize: 13, fontFamily: 'Open Sans'),
+      decoration: _filtroDecoration('Pesquisar por loja').copyWith(
+        suffixIcon: IconButton(
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 30, minHeight: 32),
+          iconSize: 18,
+          icon: const Icon(Icons.search, color: _hint),
+          onPressed: _aplicar,
+        ),
+      ),
+    );
+
+    return Row(
+      children: [
+        Expanded(child: regiao),
+        const SizedBox(width: 8),
+        Expanded(child: distrito),
+        const SizedBox(width: 8),
+        Expanded(child: loja),
+      ],
     );
   }
 
   Widget _pagination() {
     if (_totalPages <= 1) return const SizedBox.shrink();
-    final inicio = (_page - 2).clamp(1, _totalPages);
-    final fim = (inicio + 3).clamp(1, _totalPages);
-    final paginas = <int>[
-      for (var p = inicio; p <= fim; p++) p,
-    ];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.first_page, size: 18),
-          onPressed: _page > 1 ? () => _irParaPagina(1) : null,
-          color: _muted,
-          disabledColor: const Color(0xFFCBD5E1),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_left, size: 18),
-          onPressed: _page > 1 ? () => _irParaPagina(_page - 1) : null,
-          color: _muted,
-          disabledColor: const Color(0xFFCBD5E1),
-        ),
-        ...paginas.map(
-          (p) => _pageButton(
-            p.toString().padLeft(2, '0'),
-            p == _page,
-            () => _irParaPagina(p),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxBotoes = constraints.maxWidth < 340
+            ? 2
+            : constraints.maxWidth < 460
+                ? 3
+                : 4;
+        var inicio = _page - (maxBotoes ~/ 2);
+        if (inicio < 1) inicio = 1;
+        final maxInicio =
+            (_totalPages - maxBotoes + 1).clamp(1, _totalPages).toInt();
+        if (inicio > maxInicio) inicio = maxInicio;
+        final fim = (inicio + maxBotoes - 1).clamp(1, _totalPages).toInt();
+        final paginas = <int>[
+          for (var p = inicio; p <= fim; p++) p,
+        ];
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _navButton(
+                Icons.first_page,
+                _page > 1 ? () => _irParaPagina(1) : null,
+              ),
+              _navButton(
+                Icons.chevron_left,
+                _page > 1 ? () => _irParaPagina(_page - 1) : null,
+              ),
+              ...paginas.map(
+                (p) => _pageButton(
+                  p.toString().padLeft(2, '0'),
+                  p == _page,
+                  () => _irParaPagina(p),
+                ),
+              ),
+              _navButton(
+                Icons.chevron_right,
+                _page < _totalPages ? () => _irParaPagina(_page + 1) : null,
+              ),
+              _navButton(
+                Icons.last_page,
+                _page < _totalPages
+                    ? () => _irParaPagina(_totalPages)
+                    : null,
+              ),
+            ],
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right, size: 18),
-          onPressed:
-              _page < _totalPages ? () => _irParaPagina(_page + 1) : null,
-          color: _muted,
-          disabledColor: const Color(0xFFCBD5E1),
-        ),
-        IconButton(
-          icon: const Icon(Icons.last_page, size: 18),
-          onPressed: _page < _totalPages
-              ? () => _irParaPagina(_totalPages)
-              : null,
-          color: _muted,
-          disabledColor: const Color(0xFFCBD5E1),
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  Widget _navButton(IconData icon, VoidCallback? onTap) {
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+      visualDensity: VisualDensity.compact,
+      iconSize: 16,
+      icon: Icon(icon),
+      onPressed: onTap,
+      color: _muted,
+      disabledColor: const Color(0xFFCBD5E1),
     );
   }
 
@@ -451,8 +459,8 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: active ? const Color(0xFFEF4444) : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
@@ -460,7 +468,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         child: Text(
           page,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
             color: active ? Colors.white : _muted,
             fontFamily: 'Open Sans',
@@ -516,7 +524,7 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
+        crossAxisCount: 4,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
         childAspectRatio: 1.1,
