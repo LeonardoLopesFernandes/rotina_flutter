@@ -16,6 +16,11 @@ class BookTreatmentsScreen extends StatefulWidget {
 
 class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   static const int _limit = 50;
+  static const Color _border = Color(0xFFE2E8F0);
+  static const Color _muted = Color(0xFF64748B);
+  static const Color _hint = Color(0xFF94A3B8);
+  static const Color _dark = Color(0xFF334155);
+
   final _storeController = TextEditingController();
   List<String> _regions = [];
   List<StoreDistrict> _districts = [];
@@ -55,20 +60,31 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   InputDecoration _filtroDecoration(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, fontFamily: 'Open Sans'),
+        hintStyle:
+            const TextStyle(fontSize: 13, color: _hint, fontFamily: 'Open Sans'),
         isDense: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         filled: true,
-        fillColor: const Color(0xFFF7F7F7),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
         ),
       );
 
   void _aplicar() {
     setState(() => _offset = 0);
+    _load();
+  }
+
+  void _irParaPagina(int page) {
+    final destino = page.clamp(1, _totalPages);
+    setState(() => _offset = (destino - 1) * _limit);
     _load();
   }
 
@@ -126,31 +142,44 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   int get _page => (_offset / _limit).floor() + 1;
 
-  List<_GridPhoto> get _gridPhotos {
-    final items = <_GridPhoto>[];
+  String get _itemLabel {
+    if (_book.type.toLowerCase() == 'management') return 'Administrativo';
+    final desc = _book.item?['description']?.toString() ?? '';
+    if (desc.isNotEmpty) return desc;
+    return _book.type.isNotEmpty ? _book.type : '—';
+  }
+
+  String get _progresso {
+    final pct = _book.total > 0 ? _book.treated * 100 / _book.total : 0;
+    return '${pct.toStringAsFixed(0)}% (${_book.treated}/${_book.total} Lojas)';
+  }
+
+  List<_GridStore> get _gridStores {
+    final items = <_GridStore>[];
     // A foto exemplo do book abre sempre como a primeira do grid.
-    if (_offset == 0) {
-      for (final filename in _book.filenames) {
-        items.add(_GridPhoto(
-          url: bookExampleImageUrl(_book.bookId, filename),
-          label: 'EXEMPLO',
-          exemplo: true,
-        ));
-      }
+    if (_offset == 0 && _book.filenames.isNotEmpty) {
+      items.add(_GridStore(
+        label: 'EXEMPLO',
+        urls: _book.filenames
+            .map((f) => bookExampleImageUrl(_book.bookId, f))
+            .toList(),
+        exemplo: true,
+      ));
     }
     for (final t in _treatments) {
-      for (final filename in t.filenames) {
-        items.add(_GridPhoto(
-          url: bookTreatmentImageUrl(t.id, filename),
-          label: t.store.isEmpty ? '—' : t.store,
-          exemplo: false,
-        ));
-      }
+      items.add(_GridStore(
+        label: t.store.isEmpty ? '—' : t.store,
+        urls: t.filenames
+            .map((f) => bookTreatmentImageUrl(t.id, f))
+            .toList(),
+        exemplo: false,
+      ));
     }
     return items;
   }
 
-  void _verImagem(String url, String title) {
+  void _abrirGaleria(_GridStore store) {
+    if (store.urls.isEmpty) return;
     showDialog<void>(
       context: context,
       barrierColor: Colors.black,
@@ -159,17 +188,20 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
-          title: Text(title),
+          title: Text(store.exemplo ? 'Foto exemplo' : 'Loja ${store.label}'),
         ),
-        body: InteractiveViewer(
-          child: Center(
-            child: Image.network(
-              url,
-              headers: _headers,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Text(
-                'Não foi possível carregar a imagem',
-                style: TextStyle(color: Colors.white),
+        body: PageView.builder(
+          itemCount: store.urls.length,
+          itemBuilder: (_, i) => InteractiveViewer(
+            child: Center(
+              child: Image.network(
+                store.urls[i],
+                headers: _headers,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Text(
+                  'Não foi possível carregar a imagem',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ),
@@ -180,31 +212,22 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final photos = _gridPhotos;
+    final stores = _gridStores;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0.5,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Fotos das lojas',
-                style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Open Sans')),
-            Text(
-              widget.book.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                  fontFamily: 'Open Sans'),
-            ),
-          ],
+        foregroundColor: _muted,
+        elevation: 0,
+        title: Text(
+          'Books > ${_book.name}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 12,
+            color: _muted,
+            fontFamily: 'Open Sans',
+          ),
         ),
         actions: [
           IconButton(
@@ -213,288 +236,392 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _region ?? '',
-                          isExpanded: true,
-                          decoration: _filtroDecoration('Região'),
-                          items: [
-                            const DropdownMenuItem(
-                                value: '', child: Text('Todas as regiões')),
-                            ..._regions.map((r) => DropdownMenuItem(
-                                value: r, child: Text(r))),
-                          ],
-                          onChanged: (v) {
-                            setState(() {
-                              _region =
-                                  (v == null || v.isEmpty) ? null : v;
-                              _district = null;
-                            });
-                            _aplicar();
-                          },
-                        ),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () => _load(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 8,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: 'Item: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: _itemLabel,
+                            style: const TextStyle(color: _muted),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _district ?? '',
-                          isExpanded: true,
-                          decoration: _filtroDecoration('Distrito'),
-                          items: [
-                            const DropdownMenuItem(
-                                value: '',
-                                child: Text('Todos os distritos')),
-                            ..._distritosVisiveis.map((d) => DropdownMenuItem(
-                                  value: d.code,
-                                  child: Text('${d.code} - ${d.name}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis),
-                                )),
-                          ],
-                          onChanged: (v) {
-                            setState(() => _district =
-                                (v == null || v.isEmpty) ? null : v);
-                            _aplicar();
-                          },
-                        ),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF0F172A),
+                        fontFamily: 'Open Sans',
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _storeController,
-                          onSubmitted: (_) => _aplicar(),
-                          style: const TextStyle(
-                              fontSize: 14, fontFamily: 'Open Sans'),
-                          decoration:
-                              _filtroDecoration('Loja (ex.: L998)').copyWith(
-                            prefixIcon:
-                                const Icon(Icons.storefront, size: 20),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.search, size: 20),
-                              onPressed: _aplicar,
+                    ),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: 'Progresso: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          TextSpan(
+                            text: _progresso,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _region = null;
-                            _district = null;
-                            _storeController.clear();
-                          });
-                          _aplicar();
-                        },
-                        child: const Text(
-                          'LIMPAR',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            fontFamily: 'Open Sans',
-                          ),
-                        ),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF0F172A),
+                        fontFamily: 'Open Sans',
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 16),
+                _filtros(),
+                const SizedBox(height: 16),
+                if (!_loading && _error == null) ...[
+                  _pagination(),
+                  if (_totalPages > 1) const SizedBox(height: 16),
                 ],
-              ),
+                _conteudo(stores),
+              ],
             ),
           ),
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary))
-                : _error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(_error!,
-                                  style: const TextStyle(
-                                      fontFamily: 'Open Sans')),
-                              const SizedBox(height: 12),
-                              OutlinedButton(
-                                onPressed: () => _load(reset: true),
-                                child: const Text('TENTAR NOVAMENTE'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: AppColors.primary,
-                        onRefresh: () => _load(),
-                        child: photos.isEmpty
-                            ? ListView(
-                                children: [
-                                  const Padding(
-                                    padding: EdgeInsets.all(40),
-                                    child: Center(
-                                      child: Text('Nenhuma foto encontrada',
-                                          style: TextStyle(
-                                              color: AppColors.textHint,
-                                              fontFamily: 'Open Sans')),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : GridView.builder(
-                                padding: const EdgeInsets.fromLTRB(
-                                    12, 0, 12, 12),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                  childAspectRatio: 1,
-                                ),
-                                itemCount: photos.length,
-                                itemBuilder: (_, i) =>
-                                    _fotoGrid(photos[i]),
-                              ),
-                      ),
-          ),
-          if (!_loading && _error == null && _total > _limit)
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: _offset > 0
-                        ? () {
-                            _offset = (_offset - _limit).clamp(0, _total);
-                            _load();
-                          }
-                        : null,
-                    icon: const Icon(Icons.chevron_left),
-                    color:
-                        _offset > 0 ? AppColors.primary : AppColors.textHint,
-                  ),
-                  Text(
-                    '$_page / $_totalPages',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Open Sans'),
-                  ),
-                  IconButton(
-                    onPressed: _offset + _limit < _total
-                        ? () {
-                            _offset += _limit;
-                            _load();
-                          }
-                        : null,
-                    icon: const Icon(Icons.chevron_right),
-                    color: _offset + _limit < _total
-                        ? AppColors.primary
-                        : AppColors.textHint,
-                  ),
-                ],
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _fotoGrid(_GridPhoto foto) {
+  Widget _filtros() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final regiao = DropdownButtonFormField<String>(
+          value: _region ?? '',
+          isExpanded: true,
+          decoration: _filtroDecoration('Região'),
+          items: [
+            const DropdownMenuItem(value: '', child: Text('Todas as regiões')),
+            ..._regions.map(
+              (r) => DropdownMenuItem(value: r, child: Text(r)),
+            ),
+          ],
+          onChanged: (v) {
+            setState(() {
+              _region = (v == null || v.isEmpty) ? null : v;
+              _district = null;
+            });
+            _aplicar();
+          },
+        );
+
+        final distrito = DropdownButtonFormField<String>(
+          value: _district ?? '',
+          isExpanded: true,
+          decoration: _filtroDecoration('Distrito'),
+          items: [
+            const DropdownMenuItem(
+                value: '', child: Text('Todos os distritos')),
+            ..._distritosVisiveis.map(
+              (d) => DropdownMenuItem(
+                value: d.code,
+                child: Text(
+                  '${d.code} - ${d.name}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+          onChanged: (v) {
+            setState(() => _district = (v == null || v.isEmpty) ? null : v);
+            _aplicar();
+          },
+        );
+
+        final loja = TextField(
+          controller: _storeController,
+          onSubmitted: (_) => _aplicar(),
+          style: const TextStyle(fontSize: 14, fontFamily: 'Open Sans'),
+          decoration: _filtroDecoration('Pesquisar por loja').copyWith(
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.search, size: 18, color: _hint),
+              onPressed: _aplicar,
+            ),
+          ),
+        );
+
+        if (constraints.maxWidth > 600) {
+          return Row(
+            children: [
+              Expanded(child: regiao),
+              const SizedBox(width: 12),
+              Expanded(child: distrito),
+              const SizedBox(width: 12),
+              Expanded(child: loja),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            regiao,
+            const SizedBox(height: 10),
+            distrito,
+            const SizedBox(height: 10),
+            loja,
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _pagination() {
+    if (_totalPages <= 1) return const SizedBox.shrink();
+    final inicio = (_page - 2).clamp(1, _totalPages);
+    final fim = (inicio + 3).clamp(1, _totalPages);
+    final paginas = <int>[
+      for (var p = inicio; p <= fim; p++) p,
+    ];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.first_page, size: 18),
+          onPressed: _page > 1 ? () => _irParaPagina(1) : null,
+          color: _muted,
+          disabledColor: const Color(0xFFCBD5E1),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_left, size: 18),
+          onPressed: _page > 1 ? () => _irParaPagina(_page - 1) : null,
+          color: _muted,
+          disabledColor: const Color(0xFFCBD5E1),
+        ),
+        ...paginas.map(
+          (p) => _pageButton(
+            p.toString().padLeft(2, '0'),
+            p == _page,
+            () => _irParaPagina(p),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right, size: 18),
+          onPressed:
+              _page < _totalPages ? () => _irParaPagina(_page + 1) : null,
+          color: _muted,
+          disabledColor: const Color(0xFFCBD5E1),
+        ),
+        IconButton(
+          icon: const Icon(Icons.last_page, size: 18),
+          onPressed: _page < _totalPages
+              ? () => _irParaPagina(_totalPages)
+              : null,
+          color: _muted,
+          disabledColor: const Color(0xFFCBD5E1),
+        ),
+      ],
+    );
+  }
+
+  Widget _pageButton(String page, bool active, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () => _verImagem(
-        foto.url,
-        foto.exemplo ? 'Foto exemplo' : 'Foto da loja ${foto.label}',
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFEF4444) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          page,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+            color: active ? Colors.white : _muted,
+            fontFamily: 'Open Sans',
+          ),
+        ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  Widget _conteudo(List<_GridStore> stores) {
+    if (_loading) {
+      return const SizedBox(
+        height: 160,
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+    if (_error != null) {
+      return SizedBox(
+        height: 160,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_error!,
+                  style: const TextStyle(fontFamily: 'Open Sans')),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => _load(reset: true),
+                child: const Text('TENTAR NOVAMENTE'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (stores.isEmpty) {
+      return const SizedBox(
+        height: 160,
+        child: Center(
+          child: Text(
+            'Nenhuma loja encontrada',
+            style: TextStyle(
+              color: _hint,
+              fontFamily: 'Open Sans',
+            ),
+          ),
+        ),
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 5,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 1.1,
+      ),
+      itemCount: stores.length,
+      itemBuilder: (_, i) => _storeTile(stores[i]),
+    );
+  }
+
+  Widget _storeTile(_GridStore store) {
+    return GestureDetector(
+      onTap: store.urls.isEmpty ? null : () => _abrirGaleria(store),
+      child: Container(
+        decoration: BoxDecoration(
+          color:
+              store.urls.isEmpty ? const Color(0xFFF1F5F9) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: _border),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              foto.url,
-              headers: _headers,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return Container(
-                  color: const Color(0xFFF0F0F0),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: AppColors.primary),
+            if (store.urls.isEmpty)
+              const Center(
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Color(0xFFCBD5E1),
+                  size: 32,
+                ),
+              )
+            else
+              Image.network(
+                store.urls.first,
+                headers: _headers,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    color: const Color(0xFFF1F5F9),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => const Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Color(0xFFCBD5E1),
+                    size: 32,
                   ),
-                );
-              },
-              errorBuilder: (_, __, ___) => Container(
-                color: const Color(0xFFF0F0F0),
-                child: const Icon(Icons.broken_image,
-                    color: AppColors.textHint, size: 32),
+                ),
               ),
-            ),
             Positioned(
-              top: 8,
-              left: 8,
+              top: 6,
+              left: 6,
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: foto.exemplo
-                      ? Colors.black.withOpacity(0.78)
-                      : AppColors.primary,
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
+                  color: _dark,
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  foto.label,
+                  store.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Open Sans',
                   ),
                 ),
               ),
             ),
+            if (store.urls.length > 1)
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${store.urls.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Open Sans',
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -502,14 +629,14 @@ class _BookTreatmentsScreenState extends State<BookTreatmentsScreen> {
   }
 }
 
-class _GridPhoto {
-  final String url;
+class _GridStore {
   final String label;
+  final List<String> urls;
   final bool exemplo;
 
-  const _GridPhoto({
-    required this.url,
+  const _GridStore({
     required this.label,
+    required this.urls,
     required this.exemplo,
   });
 }
